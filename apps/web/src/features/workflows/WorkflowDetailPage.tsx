@@ -8,6 +8,7 @@ import { ConfirmDialog } from "../../components/ConfirmDialog.tsx";
 import { SaveStatus, type SaveState } from "../../components/SaveStatus.tsx";
 import { api, errorMessage } from "../../lib/api.ts";
 import type { AssetView, Workflow } from "../../lib/types.ts";
+import { RunPanel } from "../runs/RunPanel.tsx";
 
 export function WorkflowDetailPage() {
   const { id } = useParams();
@@ -118,6 +119,7 @@ export function WorkflowDetailPage() {
           <p className="hint">预览仅展示资料。LibTV 执行通过演示入口操作。</p>
         </article>
       </div>
+      <RunPanel key={`${draft.id}-${JSON.stringify(draft.default_parameters)}`} ownerId={draft.id} parameters={draft.default_parameters} />
       <ConfirmDialog open={deleting} title="删除工作流" description="请确认删除。仍被草稿引用时，请先解除引用。" danger confirmLabel="确认删除" onCancel={() => setDeleting(false)} onConfirm={() => remove.mutate()} />
     </>
   );

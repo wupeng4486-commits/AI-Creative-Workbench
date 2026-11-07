@@ -10,6 +10,7 @@ import { SourceFilter, type SourceValue } from "../../components/SourceFilter.ts
 import { Badge } from "../../components/Badge.tsx";
 import { api, errorMessage } from "../../lib/api.ts";
 import type { Workflow } from "../../lib/types.ts";
+import { LibTVPanel } from "./LibTVPanel.tsx";
 
 export function WorkflowsPage() {
   const navigate = useNavigate();
@@ -40,6 +41,11 @@ export function WorkflowsPage() {
   return (
     <>
       <PageHeader title="工作流" description="团队工作流与 LibTV 工作流入口。" actions={<Button variant="primary" onClick={() => { setFormError(null); setCreating(true); }}>新建团队工作流</Button>} />
+      <div className="segmented" role="tablist" aria-label="工作流目录">
+        <button type="button" role="tab" aria-selected={params.get("tab") !== "libtv"} onClick={() => filter("tab", "")}>团队工作流</button>
+        <button type="button" role="tab" aria-selected={params.get("tab") === "libtv"} onClick={() => filter("tab", "libtv")}>LibTV 工作流</button>
+      </div>
+      {params.get("tab") === "libtv" ? <LibTVPanel /> : <>
       <div className="toolbar">
         <SearchInput label="搜索工作流" value={params.get("search") ?? ""} onChange={(value) => filter("search", value)} />
         <SourceFilter value={(params.get("origin") ?? "all") as SourceValue} onChange={(value) => filter("origin", value === "all" ? "" : value)} />
@@ -64,6 +70,7 @@ export function WorkflowsPage() {
           </div>
         </article>)}</div>
       )}
+      </>}
       <Modal open={creating} title="新建团队工作流" onClose={() => setCreating(false)} footer={<Button variant="primary" disabled={create.isPending} onClick={() => {
         if (!form.name.trim()) { setFormError("工作流名称不能为空。"); return; }
         setFormError(null);
