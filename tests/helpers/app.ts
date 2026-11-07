@@ -20,6 +20,8 @@ export async function makeApp(dataDir = tempDataDir()): Promise<FastifyInstance>
 
 export function cleanupDirs(): void {
   for (const dir of dirs.splice(0)) {
-    fs.rmSync(dir, { recursive: true, force: true });
+    // Windows can keep a handle for a few milliseconds after a streamed
+    // response closes; retry instead of failing teardown.
+    fs.rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 }

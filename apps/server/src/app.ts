@@ -8,6 +8,7 @@ import type { AppConfig } from "./config.ts";
 import { createContext } from "./context.ts";
 import { getIntegrations, getPreferences } from "./services/settings.ts";
 import { registerFileRoutes } from "./routes/files.ts";
+import { registerBackupRoutes } from "./routes/backups.ts";
 
 export interface AppDeps {
   config: AppConfig;
@@ -111,6 +112,7 @@ export async function buildApp({ config, version }: AppDeps): Promise<FastifyIns
   }));
 
   await registerFileRoutes(app, ctx);
+  await registerBackupRoutes(app, ctx);
 
   app.setNotFoundHandler(async (request, reply) => {
     if (request.url.startsWith("/api/")) {

@@ -217,7 +217,7 @@ describe("references, transactions and history (T05)", () => {
     expect(updated.name).toBe("新名");
     expect(updated.tags).toEqual(["a", "b"]);
     const activities = dataset.db
-      .prepare("SELECT action FROM activities WHERE resource_id = ? ORDER BY created_at")
+      .prepare("SELECT action FROM activities WHERE resource_id = ? ORDER BY rowid")
       .all(asset.id) as Array<{ action: string }>;
     expect(activities.map((row) => row.action)).toEqual(["导入资产：原名", "编辑资产：新名"]);
     dataset.db.close();
