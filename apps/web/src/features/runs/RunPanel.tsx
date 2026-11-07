@@ -17,7 +17,7 @@ export interface DemoRun {
   demo: boolean;
   parameters: Record<string, unknown>;
   inputSnapshot: { inputs: Record<string, unknown>; parameters: Record<string, unknown>; resources: Array<{ id: string; name: string; kind: string }> };
-  result: { logs?: string[]; shots?: Array<{ title: string; description: string; order: number }>; delivery?: { version: number; note: string } };
+  result: { logs?: string[]; shots?: Array<{ title: string; description: string; order: number }>; delivery?: { version: number; note: string }; joinPlan?: { clips: Array<{ name: string; duration: number }>; totalDuration: number } };
   items: Array<{ id: string; label: string; status: string; message: string; result: { fileId?: string; contentUrl?: string; downloadUrl?: string; previewKind?: PreviewKind; role?: string; demo?: boolean } }>;
 }
 

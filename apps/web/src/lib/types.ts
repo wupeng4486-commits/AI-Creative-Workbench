@@ -112,4 +112,6 @@ export interface Draft {
   revision: number;
   createdAt: string;
   updatedAt: string;
+  clipAssetIds?: string[];
+  totalDuration: number;
 }

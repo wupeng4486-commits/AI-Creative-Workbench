@@ -11,6 +11,8 @@ import { ProductionParameters } from "./ProductionParameters.tsx";
 import { StudioProduction } from "./StudioProduction.tsx";
 import { FieldError } from "../../components/FieldError.tsx";
 import { DesignDelivery } from "./DesignDelivery.tsx";
+import { VideoJoinEditor } from "./VideoJoinEditor.tsx";
+import { JianyingButton } from "./JianyingButton.tsx";
 
 export function DraftEditor({ initial, datasetId, onNew }: { initial: Draft; datasetId: string; onNew: () => Promise<unknown> }) {
   const navigate = useNavigate();
@@ -49,6 +51,7 @@ export function DraftEditor({ initial, datasetId, onNew }: { initial: Draft; dat
       }}>新建草稿</Button>
       <Button onClick={() => { void queue.flush().catch(() => {}); }}>保存草稿</Button>
       <SaveStatus state={queue.state} detail={queue.error?.message} onRetry={() => { void queue.flush().catch(() => {}); }} />
+      <JianyingButton queue={queue} datasetId={datasetId} />
     </div>
     {queue.conflictRevision && <div className="card">
       <p>另一页面已保存修订 {queue.conflictRevision}。请选择如何处理本次输入。</p>
@@ -60,13 +63,14 @@ export function DraftEditor({ initial, datasetId, onNew }: { initial: Draft; dat
       <article className="card">
         <h2>创作要求</h2>
         <label className="field">草稿名称<input aria-label="草稿名称" value={draft.name} onChange={(event) => queue.edit({ name: event.target.value })} /></label>
-        <label className="field">创作要求<textarea rows={8} aria-label="创作要求" value={draft.requirements} onChange={(event) => queue.edit({ requirements: event.target.value })} /></label>
+        <label className="field">{draft.creationType === "video_join" ? "简单输出要求" : "创作要求"}<textarea rows={8} aria-label={draft.creationType === "video_join" ? "简单输出要求" : "创作要求"} value={draft.requirements} onChange={(event) => queue.edit({ requirements: event.target.value })} /></label>
         <FieldError message={fieldErrors.requirements} />
         <ProductionParameters draft={draft} edit={(changes) => queue.edit(changes)} errors={fieldErrors} />
         {draft.creationType === "design" && <DesignDelivery queue={queue} assets={assets.data?.items ?? []} datasetId={datasetId} errors={fieldErrors} onValidation={setFieldErrors} />}
+        {draft.creationType === "video_join" && <VideoJoinEditor queue={queue} assets={assets.data?.items ?? []} datasetId={datasetId} errors={fieldErrors} />}
         <p className="hint">修订 {draft.revision} · 保存在本机</p>
       </article>
-      {["ai_video", "ai_image", "design"].includes(draft.creationType) && <StudioProduction queue={queue} datasetId={datasetId} onValidation={setFieldErrors} />}
+      <StudioProduction queue={queue} datasetId={datasetId} onValidation={setFieldErrors} />
       <article className="card">
         <h2>关联资源</h2>
         <label className="field">智能体<select aria-label="选择智能体" value={draft.agentId ?? ""} onChange={(event) => {

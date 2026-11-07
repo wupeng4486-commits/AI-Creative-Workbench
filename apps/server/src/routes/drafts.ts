@@ -10,6 +10,7 @@ const bodySchema = { type: "object", properties: {
   agentId: { type: ["string", "null"] }, productId: { type: ["string", "null"] }, workflowId: { type: ["string", "null"] },
   assetIds: { type: "array", items: { type: "string" }, uniqueItems: true }, skillIds: { type: "array", items: { type: "string" }, uniqueItems: true },
   revision: { type: "integer", minimum: 1 },
+  clipAssetIds: { type: "array", maxItems: 50, items: { type: "string" } },
 } };
 
 export async function registerDraftRoutes(app: FastifyInstance, ctx: AppContext) {

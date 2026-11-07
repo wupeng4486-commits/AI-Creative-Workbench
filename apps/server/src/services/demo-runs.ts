@@ -12,6 +12,7 @@ import { buildSnapshot, hydrateRun, insertRun, keepRunFile, markUnfinishedRunsIn
 import { getWorkflow } from "./workflows.ts";
 import { getConnector } from "./connectors.ts";
 import { getDraft, type DraftView } from "./drafts.ts";
+import { findAsset } from "./assets.ts";
 
 export const LIBTV_SAMPLES = SEED_WORKFLOWS.map((sample) => ({
   id: sample.id.replace("seed-workflow-", "libtv-"), name: sample.name, purpose: sample.purpose,
@@ -32,8 +33,9 @@ export interface DemoRunInput {
 function validateProduction(ctx: AppContext, draft: DraftView) {
   const errors: Record<string, string> = {};
   if (!draft.requirements.trim()) errors.requirements = "请填写创作要求。";
-  if (!draft.productId) errors.productId = "请选择商品知识。";
-  const assets = draft.assetIds.map((id) => ctx.db.prepare("SELECT f.mime_type FROM assets a JOIN files f ON f.id = a.file_id WHERE a.id = ? AND f.state = 'ready'").get(id) as { mime_type: string } | undefined);
+  if (["ai_video", "ai_image"].includes(draft.creationType) && !draft.productId) errors.productId = "请选择商品知识。";
+  const assetIds = draft.creationType === "video_join" ? draft.clips.map((clip) => clip.assetId) : draft.assetIds;
+  const assets = assetIds.map((id) => ctx.db.prepare("SELECT f.mime_type, f.duration FROM assets a JOIN files f ON f.id = a.file_id WHERE a.id = ? AND f.state = 'ready'").get(id) as { mime_type: string; duration: number | null } | undefined);
   if (!assets.length || assets.some((asset) => !asset)) errors.assetIds = "请选择有效的参考素材。";
   if (draft.creationType === "ai_video") {
     if (typeof draft.parameters.duration !== "number" || draft.parameters.duration < 1 || draft.parameters.duration > 120) errors.duration = "目标时长需在 1 到 120 秒之间。";
@@ -47,6 +49,8 @@ function validateProduction(ctx: AppContext, draft: DraftView) {
     }
     if (typeof draft.parameters.count !== "number" || !Number.isInteger(draft.parameters.count) || draft.parameters.count < 1 || draft.parameters.count > 8) errors.count = "候选数量需为 1 到 8 的整数。";
     if (!String(draft.parameters.composition ?? "").trim() && !String(draft.parameters.style ?? "").trim()) errors.style = "请填写构图或风格要求。";
+  } else if (draft.creationType === "video_join") {
+    if (draft.clips.length < 2 || assets.some((asset) => !asset?.mime_type.startsWith("video/") || !asset.duration)) errors.clips = "请添加至少两个可读取时长的视频片段。";
   } else {
     throw appError("VALIDATION_FAILED", "该创作类型的演示入口尚未开放。");
   }
@@ -96,7 +100,7 @@ export class DemoRunner {
     if (draft) {
       if (input.draftRevision !== undefined && input.draftRevision !== draft.revision) throw appError("REVISION_CONFLICT", "草稿版本已变化，请先保存最新输入。", { currentRevision: draft.revision });
       validateProduction(this.ctx, draft);
-      input = { ...input, requirements: draft.requirements, parameters: { ...draft.parameters, count: draft.creationType === "ai_video" ? 1 : draft.parameters.count }, assetIds: draft.assetIds, sampleInputs: false };
+      input = { ...input, requirements: draft.requirements, parameters: { ...draft.parameters, count: draft.creationType === "ai_image" ? draft.parameters.count : 1 }, assetIds: Array.from(new Set([...draft.assetIds, ...draft.clips.map((clip) => clip.assetId)])), sampleInputs: false };
     }
     if (!input.requirements?.trim()) throw appError("VALIDATION_FAILED", "请填写本次演示要求。", { fieldErrors: { requirements: "演示要求不能为空。" } });
     if (!input.sampleInputs && !input.assetIds?.length) throw appError("VALIDATION_FAILED", "请选择输入素材，或明确选择使用本地测试素材。", { fieldErrors: { assetIds: "缺少输入素材。" } });
@@ -125,6 +129,10 @@ export class DemoRunner {
         ...input, workflow, draft, requirements: input.requirements.trim(),
         product: draft?.productId ? this.ctx.db.prepare("SELECT * FROM products WHERE id = ?").get(draft.productId) : null,
         teamWorkflow: draft?.workflowId ? getWorkflow(this.ctx.db, draft.workflowId) : null,
+        orderedClips: draft?.clips.map((clip) => {
+          const asset = findAsset(this.ctx.db, clip.assetId)!;
+          return { ...clip, name: asset.name, fileId: asset.file_id, duration: asset.file?.duration };
+        }) ?? [],
       },
       parameters, assetIds: input.assetIds, skillIds: draft?.skillIds, agentId: draft?.agentId,
     });
@@ -208,7 +216,7 @@ export class DemoRunner {
         this.schedule(id, datasetId);
         return;
       }
-      const snapshot = parseJson<{ inputs: DemoRunInput }>(row.input_snapshot, { inputs: {} as DemoRunInput });
+      const snapshot = parseJson<RunSnapshot>(row.input_snapshot, { inputs: {}, parameters: {}, resources: [] });
       this.ctx.db.transaction(() => {
         const parameters = parseJson<{ action?: string }>(row.parameters, {});
         const connecting = row.owner === "connector" && parameters.action === "connect";
@@ -227,10 +235,11 @@ export class DemoRunner {
         const message = connecting ? (failed ? "模拟连接失败，可重试。" : "模拟连接成功，未调用真实服务。") : (failed ? "部分条目演示失败，可重试。" : "本地演示完成，结果为测试素材。");
         const shots = row.kind === "ai_video" ? [
           { title: "商品开场（示例）", description: String((parseJson<Record<string, unknown>>(row.parameters, {})).shotRequirements ?? ""), order: 1 },
-          { title: "使用场景（示例）", description: snapshot.inputs.requirements, order: 2 },
+          { title: "使用场景（示例）", description: String(snapshot.inputs.requirements), order: 2 },
           { title: "卖点与收束（示例）", description: "核对商品信息与交付要求。", order: 3 },
         ] : [];
-        this.ctx.db.prepare("UPDATE runs SET status = ?, progress = 100, result = ?, message = ?, finished_at = ? WHERE id = ? AND status IN ('queued', 'running')").run(failed ? "failed" : "completed", JSON.stringify({ logs, demo: true, shots }), message, nowIso(), id);
+        const joinPlan = row.kind === "video_join" ? { clips: snapshot.inputs.orderedClips, totalDuration: (snapshot.inputs.draft as DraftView).totalDuration } : undefined;
+        this.ctx.db.prepare("UPDATE runs SET status = ?, progress = 100, result = ?, message = ?, finished_at = ? WHERE id = ? AND status IN ('queued', 'running')").run(failed ? "failed" : "completed", JSON.stringify({ logs, demo: true, shots, joinPlan }), message, nowIso(), id);
         recordActivity(this.ctx.db, "run", id, failed ? "本地演示失败" : "本地演示完成", { name: row.owner_id }, true);
       })();
     } catch (error) {

@@ -56,6 +56,10 @@ export function StudioProduction({ queue, datasetId, onValidation }: { queue: Dr
     {selected ? <section aria-label="当前制作记录">
       <h3>{selected.kind === "design_delivery" ? `交付版本 ${selected.result.delivery?.version} 已登记` : STATUS[selected.status] ?? selected.status}</h3><progress max={100} value={selected.progress} aria-label="制作进度" />
       <p>{selected.message}</p>
+      {selected.result.joinPlan && <section aria-label="拼接方案">
+        <h4>拼接方案（演示）</h4><ol>{selected.result.joinPlan.clips.map((clip, index) => <li key={index}>{clip.name} · {clip.duration}秒</li>)}</ol>
+        <p>方案合计 {selected.result.joinPlan.totalDuration}秒</p>
+      </section>}
       {["queued", "running"].includes(selected.status) && <Button disabled={stop.isPending} onClick={() => stop.mutate(selected.id)}>停止制作演示</Button>}
       {["failed", "stopped", "interrupted"].includes(selected.status) && <Button disabled={retry.isPending} onClick={() => retry.mutate(selected.id)}>重试原记录</Button>}
       {selected.result.shots && selected.result.shots.length > 0 && <><h4>分镜示例</h4><ol>{selected.result.shots.map((shot) => <li key={shot.order}><strong>{shot.title}</strong><p>{shot.description}</p></li>)}</ol></>}

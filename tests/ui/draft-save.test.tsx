@@ -3,7 +3,7 @@ import { DraftSaveQueue } from "../../apps/web/src/features/studio/DraftSaveQueu
 import { ApiRequestError } from "../../apps/web/src/lib/api.ts";
 import type { Draft } from "../../apps/web/src/lib/types.ts";
 
-const draft: Draft = { id: "d1", creationType: "ai_video", name: "草稿", requirements: "", parameters: {}, agentId: null, productId: null, workflowId: null, assetIds: [], skillIds: [], clips: [], revision: 1, createdAt: "t", updatedAt: "t" };
+const draft: Draft = { id: "d1", creationType: "ai_video", name: "草稿", requirements: "", parameters: {}, agentId: null, productId: null, workflowId: null, assetIds: [], skillIds: [], clips: [], totalDuration: 0, revision: 1, createdAt: "t", updatedAt: "t" };
 const queues: DraftSaveQueue[] = [];
 function create(write: (draft: Draft) => Promise<Draft>) {
   const queue = new DraftSaveQueue(structuredClone(draft), write, vi.fn(), 50);
