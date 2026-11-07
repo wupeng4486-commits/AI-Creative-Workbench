@@ -24,6 +24,7 @@ import { registerDraftRoutes } from "./routes/drafts.ts";
 import { registerDesignDeliveryRoutes } from "./routes/design-deliveries.ts";
 import { registerResultRoutes } from "./routes/results.ts";
 import { registerDiscoveryRoutes } from "./routes/discovery.ts";
+import { registerDataRoutes } from "./routes/data.ts";
 import { appError } from "./http/errors.ts";
 
 export interface AppDeps {
@@ -43,11 +44,25 @@ export async function buildApp({ config, version }: AppDeps): Promise<FastifyIns
     ctx.close();
   });
   installErrorHandler(app, () => ctx.datasetId);
+  const writeRequests = new WeakSet<object>();
+  const exclusiveRequests = new WeakSet<object>();
   app.addHook("preHandler", async (request) => {
     if (["GET", "HEAD"].includes(request.method)) return;
-    await ctx.barrier.wait();
+    while (ctx.barrier.locked) await ctx.barrier.wait();
     const datasetId = request.headers["x-dataset-id"];
     if (datasetId && datasetId !== ctx.datasetId) throw appError("DATASET_CHANGED", "本机数据集已经切换，请重新加载后继续。", { datasetId: ctx.datasetId });
+    if (/^\/api\/(backups(?:\/|$)|restores\/[^/]+\/confirm|system\/reset)/.test(request.url)) {
+      ctx.barrier.acquire();
+      exclusiveRequests.add(request);
+      await ctx.barrier.drain();
+    } else {
+      ctx.barrier.beginWrite();
+      writeRequests.add(request);
+    }
+  });
+  app.addHook("onResponse", async (request) => {
+    if (writeRequests.delete(request)) ctx.barrier.endWrite();
+    if (exclusiveRequests.delete(request)) ctx.barrier.release();
   });
   await app.register(multipart, {
     limits: { fileSize: 8 * 1024 * 1024 * 1024, files: 1 },
@@ -152,6 +167,7 @@ export async function buildApp({ config, version }: AppDeps): Promise<FastifyIns
   await registerDesignDeliveryRoutes(app, ctx);
   await registerResultRoutes(app, ctx);
   await registerDiscoveryRoutes(app, ctx);
+  await registerDataRoutes(app, ctx);
 
   app.setNotFoundHandler(async (request, reply) => {
     if (request.url.startsWith("/api/")) {

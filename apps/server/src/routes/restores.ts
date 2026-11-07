@@ -14,6 +14,8 @@ import {
 } from "../services/restore.ts";
 import { openActiveDataset } from "../db/datasets.ts";
 import { seedDatabase } from "../db/seed.ts";
+import { createBackup } from "../services/backup.ts";
+import { markUnfinishedRunsInterrupted } from "../services/snapshots.ts";
 
 export async function registerRestoreRoutes(
   app: FastifyInstance,
@@ -51,6 +53,7 @@ export async function registerRestoreRoutes(
         datasetId: ctx.datasetId,
       });
     }
+    if (body.backupFirst) await createBackup(ctx.db, ctx.dataset.dir, ctx.config.dataDir, { datasetId: ctx.datasetId, barrier: ctx.barrier });
     const result = activateRestore(
       ctx.config.dataDir,
       id,
@@ -63,6 +66,8 @@ export async function registerRestoreRoutes(
     ctx.dataset = next;
     ctx.db = next.db;
     ctx.datasetId = next.datasetId;
+    markUnfinishedRunsInterrupted(ctx.db);
+    ctx.db.prepare("UPDATE run_items SET item_status = 'interrupted', message = '恢复时演示已中断。' WHERE item_status IN ('queued', 'running')").run();
     return reply.send({
       datasetId: ctx.datasetId,
       previousDatasetId: result.previousDatasetId,

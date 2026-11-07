@@ -57,6 +57,7 @@ export function AssetsPage() {
     filesOnly: params.get("filesOnly") ?? "",
   });
   const { upload, update, remove } = useAssetMutations();
+  const preferences = useQuery({ queryKey: ["preferences"], queryFn: () => api<{ preferences: { assetView: "list" | "grid" } }>("/api/settings") });
   const items = assets.data?.items ?? [];
   const editingAsset = useMemo(
     () => items.find((item) => item.id === editing) ?? null,
@@ -208,7 +209,7 @@ export function AssetsPage() {
               />
             )
           ) : (
-            <div className="grid-cards">
+            <div className={preferences.data?.preferences?.assetView === "grid" ? "grid-cards" : "asset-list"} data-testid="asset-catalog" data-view={preferences.data?.preferences?.assetView ?? "list"}>
               {items.map((asset) => (
                 <article key={asset.id} className="card">
                   {asset.thumbUrl ? (

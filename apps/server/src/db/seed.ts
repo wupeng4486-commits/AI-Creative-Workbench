@@ -265,11 +265,12 @@ export interface SeedResult {
  * Applies seed version 1 and any later additions that are still missing.
  * Existing rows are never updated, so user edits survive restarts.
  */
-export function seedDatabase(db: Database.Database): SeedResult {
+export function seedDatabase(db: Database.Database, supplement = false): SeedResult {
   const state = db.prepare("SELECT seed_version FROM seed_state WHERE seed_key = 'demo'").get() as
     | { seed_version: number }
     | undefined;
-  const already = state?.seed_version ?? 0;
+  const already = supplement ? 0 : state?.seed_version ?? 0;
+  const existingParents = new Set((db.prepare("SELECT id FROM agents UNION SELECT id FROM team_workflows").all() as Array<{ id: string }>).map((row) => row.id));
 
   const apply = db.transaction((): boolean => {
     const time = nowIso();
@@ -389,6 +390,7 @@ export function seedDatabase(db: Database.Database): SeedResult {
         ["seed-workflow-desubtitle", "seed-skill-libtv-video"],
       ];
       for (const [agentId, skillId] of relations) {
+        if (supplement && existingParents.has(agentId)) continue;
         if (agentId.startsWith("seed-agent-")) {
           db.prepare(
             "INSERT OR IGNORE INTO agent_skills (agent_id, skill_id) VALUES (?, ?)",

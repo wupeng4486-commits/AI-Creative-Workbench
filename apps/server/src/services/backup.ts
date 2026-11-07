@@ -18,6 +18,17 @@ export const BACKUP_FORMAT_VERSION = 1;
 export class WriteBarrier {
   private depth = 0;
   private waiting: Array<() => void> = [];
+  private activeWrites = 0;
+  private drainWaiters: Array<() => void> = [];
+
+  beginWrite(): void { this.activeWrites += 1; }
+  endWrite(): void {
+    this.activeWrites -= 1;
+    if (!this.activeWrites) for (const resolve of this.drainWaiters.splice(0)) resolve();
+  }
+  async drain(): Promise<void> {
+    if (this.activeWrites) await new Promise<void>((resolve) => this.drainWaiters.push(resolve));
+  }
 
   get locked(): boolean {
     return this.depth > 0;
@@ -165,8 +176,6 @@ export async function createBackup(
     const snapshot = path.join(dataDir, "staging", "backups", `snapshot-${id}.sqlite`);
     fs.mkdirSync(path.dirname(snapshot), { recursive: true });
     await db.backup(snapshot);
-    barrier?.release();
-    released = true;
 
     await new Promise<void>((resolve, reject) => {
       for (const row of fileRows) {
@@ -197,6 +206,8 @@ export async function createBackup(
     db.prepare(
       `UPDATE backups SET status = 'ready', size = ?, record_counts = ?, file_count = ?, finished_at = ? WHERE id = ?`,
     ).run(size, JSON.stringify(counts), fileRows.length, nowIso(), id);
+    barrier?.release();
+    released = true;
     return {
       backup: db.prepare("SELECT * FROM backups WHERE id = ?").get(id) as BackupRecord,
       manifest,

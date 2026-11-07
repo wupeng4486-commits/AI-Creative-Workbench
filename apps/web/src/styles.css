@@ -678,6 +678,9 @@ select:focus-visible {
 }
 .studio-grid > .card { min-width: 0; }
 .drag-handle { display: inline-block; cursor: grab; user-select: none; padding: 6px; color: var(--text-muted); }
+.asset-list { display: grid; gap: 8px; }
+.asset-list > .card { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.asset-list .asset-thumb { width: 100px; height: 60px; }
 .studio-grid pre { overflow: auto; max-height: 360px; white-space: pre-wrap; overflow-wrap: anywhere; }
 @media (max-width: 1100px) {
   .studio-grid { grid-template-columns: 1fr; }
