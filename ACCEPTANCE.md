@@ -53,6 +53,7 @@
 | T02 | 已完成 | T02 提交 | build、typecheck、test、test:e2e、启动/停止脚本 | 9 项集成测试、2 项 e2e 通过 |
 | T11 | 已完成 | 本次 T11 提交 | npm run check、npx playwright test、Python unittest、git diff --check | 84 项服务端、15 项界面、14 项 e2e、10 项 Python 测试通过 |
 | T12 | 已完成 | 本次 T12 提交 | npm run check、agents/skills/navigation e2e | 91 项服务端、15 项界面、10 项相关 e2e 通过 |
+| T13 | 已完成 | 本次 T13 提交 | npm run check、workflows e2e | 98 项服务端、15 项界面、2 项工作流 e2e 通过 |
 
 ### T11 验证记录
 
@@ -70,3 +71,9 @@ SK-01 的智能体详情选择与完整关联联调按计划在 T12 完成，PRD
 2026-11-07 完成智能体目录、来源与用途筛选、最近更新排序、新建编辑复制删除、四个详情页签、商品与技能及素材关联和示例对话。去创作传递智能体 ID，并按领域选择工作室类型。
 
 `tests/integration/agents.test.ts` 的 7 项测试验证必填与对话格式、资料和关联重启恢复、共享保护、副本独立、关联事务回滚、草稿引用保护及删除后重启。`tests/e2e/agents.spec.ts` 的 3 项浏览器测试验证 AG-01、AG-02、示例对话和创作参数，并从技能详情核对反向关联。AG-03 的草稿实际带入在 T16 联调。
+
+### T13 验证记录
+
+2026-11-07 完成团队流程目录、来源用途筛选、搜索、封面与步骤预览、新建编辑复制删除、LibTV 引用、默认参数、技能引用及真实附件。预览接口保持只读。
+
+`tests/integration/workflows.test.ts` 的 7 项测试覆盖参数与附件重启恢复、下载内容、共享保护和副本独立性、失败回滚、预览不运行、草稿引用保护与删除重启。`tests/e2e/workflows.spec.ts` 的 2 项测试验证浏览器实际创建、导入附件、保存重开、共享预览和复制。使用入口与运行在 T14 接通。

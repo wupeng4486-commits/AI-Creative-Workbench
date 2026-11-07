@@ -79,3 +79,20 @@ export interface Agent {
   products: Array<{ id: string; name: string }>;
   assets: Array<{ id: string; name: string }>;
 }
+
+export interface Workflow {
+  id: string;
+  name: string;
+  purpose: string;
+  origin: "owned" | "shared";
+  author: string;
+  libtv_ref: string;
+  input_spec: string;
+  default_parameters: Record<string, unknown>;
+  steps: string[];
+  cover_file_id: string | null;
+  created_at: string;
+  updated_at: string;
+  skills: Array<{ id: string; name: string }>;
+  assets: AssetView[];
+}
