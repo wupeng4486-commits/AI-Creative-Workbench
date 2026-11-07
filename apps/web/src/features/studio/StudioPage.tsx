@@ -63,7 +63,7 @@ export function StudioPage() {
       </div>
       {(list.isError || detail.isError) && <p role="alert">{errorMessage(list.error ?? detail.error)}</p>}
       {create.isError && !hasIncoming && <p role="alert">{errorMessage(create.error)}</p>}
-      {draft && datasetId ? <DraftEditor key={`${draft.id}-${draft.revision}`} initial={draft} datasetId={datasetId} onNew={() => create.mutate(false)} /> : (
+      {draftId && draft && datasetId ? <DraftEditor key={`${draft.id}-${draft.revision}`} initial={draft} datasetId={datasetId} onNew={() => create.mutateAsync(false)} /> : create.isPending || (!draftId && draft && !hasIncoming) ? <p role="status">正在打开草稿…</p> : (
         <EmptyState title={list.isLoading ? "正在读取草稿" : "还没有草稿"} description="新建草稿后可组织需求、选择资料并自动保存。" action={<Button variant="primary" disabled={list.isLoading || create.isPending} onClick={() => create.mutate(hasIncoming)}>新建草稿</Button>} />
       )}
       <Modal open={hasIncoming && !list.isLoading && !detail.isLoading} title="带入创作资料" onClose={() => {

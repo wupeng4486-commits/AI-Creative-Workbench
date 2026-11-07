@@ -7,11 +7,16 @@ import { SaveStatus } from "../../components/SaveStatus.tsx";
 import { api, errorMessage } from "../../lib/api.ts";
 import type { Agent, AssetView, Draft, Skill, Workflow } from "../../lib/types.ts";
 import { DraftSaveQueue } from "./DraftSaveQueue.ts";
+import { ProductionParameters } from "./ProductionParameters.tsx";
+import { StudioProduction } from "./StudioProduction.tsx";
+import { FieldError } from "../../components/FieldError.tsx";
 
-export function DraftEditor({ initial, datasetId, onNew }: { initial: Draft; datasetId: string; onNew: () => void }) {
+export function DraftEditor({ initial, datasetId, onNew }: { initial: Draft; datasetId: string; onNew: () => Promise<unknown> }) {
   const navigate = useNavigate();
   const client = useQueryClient();
   const [, update] = useState(0);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [switching, setSwitching] = useState(false);
   const queue = useMemo(() => new DraftSaveQueue(initial, async (draft) => {
     const data = await api<{ draft: Draft }>(`/api/drafts/${draft.id}`, { method: "PATCH", datasetId, body: draft });
     void client.invalidateQueries({ queryKey: ["drafts"] });
@@ -31,12 +36,16 @@ export function DraftEditor({ initial, datasetId, onNew }: { initial: Draft; dat
   const products = useQuery({ queryKey: ["products"], queryFn: () => api<{ items: Array<{ id: string; name: string }> }>("/api/products") });
   const workflows = useQuery({ queryKey: ["workflows", "draft-picker"], queryFn: () => api<{ items: Workflow[] }>("/api/workflows") });
   const drafts = useQuery({ queryKey: ["drafts", draft.creationType], queryFn: () => api<{ items: Draft[] }>(`/api/drafts?creationType=${draft.creationType}`) });
+  if (switching) return <p role="status">正在新建草稿…</p>;
   return <>
     <div className="toolbar">
       <select aria-label="选择草稿" value={draft.id} onChange={(event) => navigate(`/studio/${draft.creationType}/${event.target.value}`)}>
         {drafts.data?.items.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
       </select>
-      <Button onClick={() => { void queue.flush().then(onNew).catch(() => {}); }}>新建草稿</Button>
+      <Button onClick={() => {
+        setSwitching(true);
+        void queue.flush().then(onNew).catch(() => {}).finally(() => setSwitching(false));
+      }}>新建草稿</Button>
       <Button onClick={() => { void queue.flush().catch(() => {}); }}>保存草稿</Button>
       <SaveStatus state={queue.state} detail={queue.error?.message} onRetry={() => { void queue.flush().catch(() => {}); }} />
     </div>
@@ -46,13 +55,16 @@ export function DraftEditor({ initial, datasetId, onNew }: { initial: Draft; dat
       <Button onClick={() => window.location.reload()}>加载已保存版本</Button>
     </div>}
     {queue.error?.message.includes("数据集") && <Button onClick={() => window.location.reload()}>加载当前数据集</Button>}
-    <div className="detail-grid">
+    <div className="studio-grid">
       <article className="card">
         <h2>创作要求</h2>
         <label className="field">草稿名称<input aria-label="草稿名称" value={draft.name} onChange={(event) => queue.edit({ name: event.target.value })} /></label>
         <label className="field">创作要求<textarea rows={8} aria-label="创作要求" value={draft.requirements} onChange={(event) => queue.edit({ requirements: event.target.value })} /></label>
+        <FieldError message={fieldErrors.requirements} />
+        <ProductionParameters draft={draft} edit={(changes) => queue.edit(changes)} errors={fieldErrors} />
         <p className="hint">修订 {draft.revision} · 保存在本机</p>
       </article>
+      {["ai_video", "ai_image"].includes(draft.creationType) && <StudioProduction queue={queue} datasetId={datasetId} onValidation={setFieldErrors} />}
       <article className="card">
         <h2>关联资源</h2>
         <label className="field">智能体<select aria-label="选择智能体" value={draft.agentId ?? ""} onChange={(event) => {
@@ -62,6 +74,7 @@ export function DraftEditor({ initial, datasetId, onNew }: { initial: Draft; dat
         <label className="field">商品知识<select aria-label="选择商品" value={draft.productId ?? ""} onChange={(event) => queue.edit({ productId: event.target.value || null })}>
           <option value="">未选择</option>{products.data?.items.map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}
         </select></label>
+        <FieldError message={fieldErrors.productId} />
         <label className="field">团队工作流<select aria-label="选择工作流" value={draft.workflowId ?? ""} onChange={(event) => {
           const workflow = workflows.data?.items.find((item) => item.id === event.target.value);
           queue.edit({ workflowId: workflow?.id ?? null, parameters: { ...workflow?.default_parameters, ...draft.parameters }, skillIds: Array.from(new Set([...draft.skillIds, ...(workflow?.skills.map((item) => item.id) ?? [])])), assetIds: Array.from(new Set([...draft.assetIds, ...(workflow?.assets.map((item) => item.id) ?? [])])) });
@@ -69,6 +82,7 @@ export function DraftEditor({ initial, datasetId, onNew }: { initial: Draft; dat
         <fieldset><legend>技能</legend>{skills.data?.items.map((skill) => <label className="field" key={skill.id}><span>
           <input type="checkbox" aria-label={`技能 ${skill.name}`} checked={draft.skillIds.includes(skill.id)} onChange={(event) => queue.edit({ skillIds: event.target.checked ? [...draft.skillIds, skill.id] : draft.skillIds.filter((id) => id !== skill.id) })} /> {skill.name}
         </span></label>)}</fieldset>
+        <FieldError message={fieldErrors.assetIds} />
         <fieldset><legend>素材</legend>{assets.data?.items.map((asset) => <label className="field" key={asset.id}><span>
           <input type="checkbox" aria-label={`素材 ${asset.name}`} checked={draft.assetIds.includes(asset.id)} onChange={(event) => queue.edit({ assetIds: event.target.checked ? [...draft.assetIds, asset.id] : draft.assetIds.filter((id) => id !== asset.id) })} /> {asset.name}
         </span></label>)}</fieldset>

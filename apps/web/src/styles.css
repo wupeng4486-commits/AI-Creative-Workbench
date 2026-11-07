@@ -669,3 +669,15 @@ select:focus-visible {
     grid-template-columns: 1fr;
   }
 }
+
+.studio-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.9fr) minmax(300px, 1.3fr) minmax(240px, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.studio-grid > .card { min-width: 0; }
+.studio-grid pre { overflow: auto; max-height: 360px; white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 1100px) {
+  .studio-grid { grid-template-columns: 1fr; }
+}

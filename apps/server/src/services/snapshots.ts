@@ -6,6 +6,7 @@ export interface RunSnapshot {
   inputs: Record<string, unknown>;
   parameters: Record<string, unknown>;
   resources: Array<{ id: string; name: string; kind: string }>;
+  resourceDetails?: Array<{ id: string; kind: string; data: Record<string, unknown> }>;
 }
 
 /**
@@ -56,7 +57,13 @@ export function buildSnapshot(
     }
     resources.push({ ...row, kind: "agent" });
   }
-  return { inputs: input.inputs, parameters: input.parameters, resources };
+  const resourceDetails = resources.map((resource) => {
+    const tables: Record<string, string> = { asset: "assets", skill: "skills", agent: "agents" };
+    const data = db.prepare(`SELECT * FROM ${tables[resource.kind]} WHERE id = ?`).get(resource.id) as Record<string, unknown>;
+    if (resource.kind === "asset" && data.file_id) data.file = db.prepare("SELECT * FROM files WHERE id = ?").get(data.file_id);
+    return { id: resource.id, kind: resource.kind, data };
+  });
+  return { inputs: input.inputs, parameters: input.parameters, resources, resourceDetails };
 }
 
 export interface RunRow {

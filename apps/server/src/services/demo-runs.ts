@@ -8,9 +8,10 @@ import { commitStagedFile, describeFile, getFile, guessMimeType, insertFile } fr
 import { newId } from "../util/id.ts";
 import { nowIso, parseJson } from "../util/time.ts";
 import { recordActivity } from "./events.ts";
-import { buildSnapshot, hydrateRun, insertRun, keepRunFile, markUnfinishedRunsInterrupted, type RunRow } from "./snapshots.ts";
+import { buildSnapshot, hydrateRun, insertRun, keepRunFile, markUnfinishedRunsInterrupted, type RunRow, type RunSnapshot } from "./snapshots.ts";
 import { getWorkflow } from "./workflows.ts";
 import { getConnector } from "./connectors.ts";
+import { getDraft, type DraftView } from "./drafts.ts";
 
 export const LIBTV_SAMPLES = SEED_WORKFLOWS.map((sample) => ({
   id: sample.id.replace("seed-workflow-", "libtv-"), name: sample.name, purpose: sample.purpose,
@@ -18,13 +19,38 @@ export const LIBTV_SAMPLES = SEED_WORKFLOWS.map((sample) => ({
 }));
 
 export interface DemoRunInput {
-  owner: "workflow" | "connector";
+  owner: "workflow" | "connector" | "draft";
   ownerId: string;
   requirements: string;
   parameters?: Record<string, unknown>;
   assetIds?: string[];
   sampleInputs?: boolean;
   simulateFailure?: boolean;
+  draftRevision?: number;
+}
+
+function validateProduction(ctx: AppContext, draft: DraftView) {
+  const errors: Record<string, string> = {};
+  if (!draft.requirements.trim()) errors.requirements = "请填写创作要求。";
+  if (!draft.productId) errors.productId = "请选择商品知识。";
+  const assets = draft.assetIds.map((id) => ctx.db.prepare("SELECT f.mime_type FROM assets a JOIN files f ON f.id = a.file_id WHERE a.id = ? AND f.state = 'ready'").get(id) as { mime_type: string } | undefined);
+  if (!assets.length || assets.some((asset) => !asset)) errors.assetIds = "请选择有效的参考素材。";
+  if (draft.creationType === "ai_video") {
+    if (typeof draft.parameters.duration !== "number" || draft.parameters.duration < 1 || draft.parameters.duration > 120) errors.duration = "目标时长需在 1 到 120 秒之间。";
+    if (!["9:16", "16:9", "1:1"].includes(String(draft.parameters.ratio))) errors.ratio = "请选择画面比例。";
+    if (typeof draft.parameters.shotRequirements !== "string" || !draft.parameters.shotRequirements.trim()) errors.shotRequirements = "请填写分镜要求。";
+  } else if (draft.creationType === "ai_image") {
+    if (!assets.some((asset) => asset?.mime_type.startsWith("image/"))) errors.assetIds = "请选择商品或参考图片。";
+    for (const key of ["width", "height"] as const) {
+      const value = draft.parameters[key];
+      if (typeof value !== "number" || !Number.isInteger(value) || value < 64 || value > 4096) errors[key] = "目标尺寸需为 64 到 4096 的整数。";
+    }
+    if (typeof draft.parameters.count !== "number" || !Number.isInteger(draft.parameters.count) || draft.parameters.count < 1 || draft.parameters.count > 8) errors.count = "候选数量需为 1 到 8 的整数。";
+    if (!String(draft.parameters.composition ?? "").trim() && !String(draft.parameters.style ?? "").trim()) errors.style = "请填写构图或风格要求。";
+  } else {
+    throw appError("VALIDATION_FAILED", "该创作类型的演示入口尚未开放。");
+  }
+  if (Object.keys(errors).length) throw appError("VALIDATION_FAILED", "请补充制作所需的输入。", { fieldErrors: errors });
 }
 
 interface RunItem { id: string; label: string; item_status: string; result: string; message: string }
@@ -66,6 +92,12 @@ export class DemoRunner {
   }
 
   start(input: DemoRunInput) {
+    const draft = input.owner === "draft" ? getDraft(this.ctx.db, input.ownerId) : null;
+    if (draft) {
+      if (input.draftRevision !== undefined && input.draftRevision !== draft.revision) throw appError("REVISION_CONFLICT", "草稿版本已变化，请先保存最新输入。", { currentRevision: draft.revision });
+      validateProduction(this.ctx, draft);
+      input = { ...input, requirements: draft.requirements, parameters: { ...draft.parameters, count: draft.creationType === "ai_video" ? 1 : draft.parameters.count }, assetIds: draft.assetIds, sampleInputs: false };
+    }
     if (!input.requirements?.trim()) throw appError("VALIDATION_FAILED", "请填写本次演示要求。", { fieldErrors: { requirements: "演示要求不能为空。" } });
     if (!input.sampleInputs && !input.assetIds?.length) throw appError("VALIDATION_FAILED", "请选择输入素材，或明确选择使用本地测试素材。", { fieldErrors: { assetIds: "缺少输入素材。" } });
     const connector = input.owner === "connector" ? getConnector(this.ctx.db, input.ownerId) : null;
@@ -77,7 +109,7 @@ export class DemoRunner {
       const active = this.ctx.db.prepare("SELECT id FROM runs WHERE owner = 'connector' AND owner_id = ? AND status IN ('queued', 'running')").get(input.ownerId);
       if (active) throw appError("CONNECTOR_STATE", "该连接器正在演示，请先等待或停止。");
     }
-    const workflow = connector ? { name: connector.name, defaultParameters: {}, connector } : input.ownerId.startsWith("libtv-")
+    const workflow = draft ? { name: draft.name, defaultParameters: {}, draft } : connector ? { name: connector.name, defaultParameters: {}, connector } : input.ownerId.startsWith("libtv-")
       ? LIBTV_SAMPLES.find((sample) => sample.id === input.ownerId)
       : getWorkflow(this.ctx.db, input.ownerId);
     if (!workflow) throw appError("WORKFLOW_NOT_FOUND", "LibTV 示例不存在。");
@@ -85,25 +117,42 @@ export class DemoRunner {
     const parameters = { ...defaults, ...input.parameters } as Record<string, unknown>;
     const count = Number(parameters.count ?? (parameters.batch ? 3 : 1));
     if (!Number.isInteger(count) || count < 1 || count > 10) throw appError("VALIDATION_FAILED", "批量数量需为 1 到 10 的整数。");
+    parameters.count = count;
     if (parameters.duration !== undefined && (typeof parameters.duration !== "number" || parameters.duration <= 0 || parameters.duration > 120)) throw appError("VALIDATION_FAILED", "时长需在 1 到 120 秒之间。");
     if (parameters.ratio !== undefined && !["9:16", "16:9", "1:1"].includes(String(parameters.ratio))) throw appError("VALIDATION_FAILED", "请选择支持的画面比例。");
+    const snapshot = buildSnapshot(this.ctx.db, {
+      inputs: {
+        ...input, workflow, draft, requirements: input.requirements.trim(),
+        product: draft?.productId ? this.ctx.db.prepare("SELECT * FROM products WHERE id = ?").get(draft.productId) : null,
+        teamWorkflow: draft?.workflowId ? getWorkflow(this.ctx.db, draft.workflowId) : null,
+      },
+      parameters, assetIds: input.assetIds, skillIds: draft?.skillIds, agentId: draft?.agentId,
+    });
+    return this.enqueue(input, snapshot, draft?.creationType ?? (connector ? "connector_demo" : "libtv_demo"), workflow.name);
+  }
+
+  private enqueue(input: DemoRunInput, snapshot: RunSnapshot, kind: string, name: string, sourceRunId?: string) {
+    const parameters = snapshot.parameters;
+    const count = Number(parameters.count ?? 1);
+    const connector = input.owner === "connector";
     const active = this.ctx.db.prepare("SELECT COUNT(*) AS count FROM runs WHERE status IN ('queued', 'running')").get() as { count: number };
     if (active.count >= 4) throw appError("RUN_LIMIT", "同时最多进行 4 次演示，请等待或停止已有演示。");
-    const snapshot = buildSnapshot(this.ctx.db, {
-      inputs: { ...input, workflow, requirements: input.requirements.trim() }, parameters, assetIds: input.assetIds,
-    });
     const row = this.ctx.db.transaction(() => {
-      const run = insertRun(this.ctx.db, { owner: input.owner, ownerId: input.ownerId, kind: connector ? "connector_demo" : "libtv_demo", snapshot });
-      if (connector) this.ctx.db.prepare("UPDATE connectors SET simulation_status = ? WHERE id = ?").run(parameters.action === "sync" ? "syncing" : "connecting", connector.id);
+      const run = insertRun(this.ctx.db, { owner: input.owner, ownerId: input.ownerId, kind, snapshot });
+      if (connector) this.ctx.db.prepare("UPDATE connectors SET simulation_status = ? WHERE id = ?").run(parameters.action === "sync" ? "syncing" : "connecting", input.ownerId);
       this.ctx.db.prepare("UPDATE runs SET result = ? WHERE id = ?").run(JSON.stringify({ logs: ["已排队（本地演示）"] }), run.id);
       for (let index = 0; index < count; index += 1) {
         this.ctx.db.prepare("INSERT INTO run_items (id, run_id, label) VALUES (?, ?, ?)").run(newId(), run.id, `示例条目 ${index + 1}`);
       }
-      for (const assetId of input.assetIds ?? []) {
+      for (const assetId of sourceRunId ? [] : input.assetIds ?? []) {
         const asset = this.ctx.db.prepare("SELECT file_id FROM assets WHERE id = ?").get(assetId) as { file_id: string | null };
         if (asset.file_id) keepRunFile(this.ctx.db, run.id, asset.file_id, "input");
       }
-      recordActivity(this.ctx.db, "run", run.id, connector ? "启动连接器本地演示" : "启动 LibTV 本地演示", { name: workflow.name }, true);
+      if (sourceRunId) {
+        const files = this.ctx.db.prepare("SELECT file_id FROM run_files WHERE run_id = ? AND role = 'input'").all(sourceRunId) as Array<{ file_id: string }>;
+        for (const file of files) keepRunFile(this.ctx.db, run.id, file.file_id, "input");
+      }
+      recordActivity(this.ctx.db, "run", run.id, connector ? "启动连接器本地演示" : "启动本地制作演示", { name }, true);
       return run;
     })();
     this.schedule(row.id, this.ctx.datasetId);
@@ -131,7 +180,11 @@ export class DemoRunner {
   retry(id: string) {
     const run = getDemoRun(this.ctx, id);
     if (!["failed", "stopped", "interrupted"].includes(run.status)) throw appError("RUN_STATE", "仅失败、停止或中断的演示可以重试。");
-    const snapshot = run.inputSnapshot as { inputs: DemoRunInput };
+    const snapshot = structuredClone(run.inputSnapshot) as RunSnapshot & { inputs: DemoRunInput };
+    if (run.owner === "draft") {
+      snapshot.inputs.simulateFailure = false;
+      return this.enqueue(snapshot.inputs, snapshot, run.kind, snapshot.inputs.requirements, id);
+    }
     return this.start({ ...snapshot.inputs, parameters: run.parameters, simulateFailure: false });
   }
 
@@ -159,7 +212,7 @@ export class DemoRunner {
       this.ctx.db.transaction(() => {
         const parameters = parseJson<{ action?: string }>(row.parameters, {});
         const connecting = row.owner === "connector" && parameters.action === "connect";
-        const image = row.owner === "connector" || Boolean(row.owner_id?.includes("repack"));
+        const image = row.kind === "ai_image" || row.owner === "connector" || Boolean(row.owner_id?.includes("repack"));
         const file = connecting ? null : ensureDemoFile(this.ctx, image ? "image" : "video");
         const description = file ? describeFile(file) : null;
         const items = this.ctx.db.prepare("SELECT id FROM run_items WHERE run_id = ? ORDER BY rowid").all(id) as Array<{ id: string }>;
@@ -172,7 +225,12 @@ export class DemoRunner {
         const failed = Boolean(snapshot.inputs.simulateFailure);
         if (row.owner === "connector") this.ctx.db.prepare("UPDATE connectors SET simulation_status = ?, last_simulated_at = ? WHERE id = ? AND enabled = 1").run(connecting && failed ? "failed" : "connected", nowIso(), row.owner_id);
         const message = connecting ? (failed ? "模拟连接失败，可重试。" : "模拟连接成功，未调用真实服务。") : (failed ? "部分条目演示失败，可重试。" : "本地演示完成，结果为测试素材。");
-        this.ctx.db.prepare("UPDATE runs SET status = ?, progress = 100, result = ?, message = ?, finished_at = ? WHERE id = ? AND status IN ('queued', 'running')").run(failed ? "failed" : "completed", JSON.stringify({ logs, demo: true }), message, nowIso(), id);
+        const shots = row.kind === "ai_video" ? [
+          { title: "商品开场（示例）", description: String((parseJson<Record<string, unknown>>(row.parameters, {})).shotRequirements ?? ""), order: 1 },
+          { title: "使用场景（示例）", description: snapshot.inputs.requirements, order: 2 },
+          { title: "卖点与收束（示例）", description: "核对商品信息与交付要求。", order: 3 },
+        ] : [];
+        this.ctx.db.prepare("UPDATE runs SET status = ?, progress = 100, result = ?, message = ?, finished_at = ? WHERE id = ? AND status IN ('queued', 'running')").run(failed ? "failed" : "completed", JSON.stringify({ logs, demo: true, shots }), message, nowIso(), id);
         recordActivity(this.ctx.db, "run", id, failed ? "本地演示失败" : "本地演示完成", { name: row.owner_id }, true);
       })();
     } catch (error) {

@@ -30,7 +30,7 @@ describe("studio drafts (T16)", () => {
     const draft = created.json().draft;
     expect(draft.agentId).toBe("seed-agent-director");
     expect(draft.skillIds.sort()).toEqual(["seed-skill-delivery-check", "seed-skill-video-breakdown"]);
-    expect(draft.parameters).toEqual({ duration: 24, ratio: "9:16" });
+    expect(draft.parameters).toEqual({ duration: 24, ratio: "9:16", shotRequirements: "" });
     const adjusted = await app.inject({ method: "PATCH", url: `/api/drafts/${draft.id}`, payload: { revision: 1, agentId: null, skillIds: [], productId: "seed-product-sunscreen" } });
     expect(adjusted.json().draft).toMatchObject({ agentId: null, skillIds: [], productId: "seed-product-sunscreen", revision: 2 });
   });
@@ -83,7 +83,7 @@ describe("studio drafts (T16)", () => {
     expect(joined.statusCode).toBe(200);
     expect(joined.json().draft.assetIds).toEqual([first.id, second.id]);
     expect(joined.json().draft.requirements).toBe("已有要求");
-    expect(joined.json().draft.parameters).toEqual({ duration: 12, ratio: "9:16" });
+    expect(joined.json().draft.parameters).toEqual({ duration: 12, ratio: "9:16", shotRequirements: "" });
     expect((await app.inject({ url: "/api/assets" })).json().items).toHaveLength(2);
     expect((await app.inject({ method: "DELETE", url: `/api/assets/${second.id}` })).statusCode).toBe(409);
   });

@@ -35,12 +35,19 @@ export interface DraftView extends DraftInput {
   updatedAt: string;
 }
 
+export const DRAFT_PARAMETER_DEFAULTS: Record<CreationType, Record<string, unknown>> = {
+  ai_video: { duration: 15, ratio: "9:16", shotRequirements: "" },
+  ai_image: { width: 1024, height: 1024, count: 3, composition: "", style: "" },
+  design: {},
+  video_join: {},
+};
+
 export function getDraft(db: Database.Database, id: string): DraftView {
   const row = db.prepare("SELECT * FROM drafts WHERE id = ?").get(id) as Record<string, unknown> | undefined;
   if (!row) throw appError("DRAFT_NOT_FOUND", "草稿不存在。");
   return {
     id, creationType: row.creation_type as CreationType, name: String(row.name), requirements: String(row.requirements),
-    parameters: parseJson(String(row.parameters), {}), agentId: row.agent_id as string | null,
+    parameters: { ...DRAFT_PARAMETER_DEFAULTS[row.creation_type as CreationType], ...parseJson<Record<string, unknown>>(String(row.parameters), {}) }, agentId: row.agent_id as string | null,
     productId: row.product_id as string | null, workflowId: row.workflow_id as string | null,
     assetIds: (db.prepare("SELECT asset_id FROM draft_assets WHERE draft_id = ? ORDER BY rowid").all(id) as Array<{ asset_id: string }>).map((item) => item.asset_id),
     skillIds: (db.prepare("SELECT skill_id FROM draft_skills WHERE draft_id = ? ORDER BY rowid").all(id) as Array<{ skill_id: string }>).map((item) => item.skill_id),
