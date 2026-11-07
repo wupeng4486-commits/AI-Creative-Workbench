@@ -9,6 +9,8 @@ import re
 import struct
 import unittest
 import zlib
+from datetime import datetime
+from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 DEMO = ROOT / "fixtures" / "demo"
@@ -122,6 +124,33 @@ class FixtureTests(unittest.TestCase):
         env = (ROOT / "ENVIRONMENT.md").read_text(encoding="utf-8")
         for token in ("v22.17.0", "10.9.2", "2.56.0", "better-sqlite3"):
             self.assertIn(token, env)
+
+    def test_manual_acceptance_evidence_is_complete(self):
+        evidence_dir = ROOT / "tests" / "evidence"
+        reboot = json.loads((evidence_dir / "reboot-2026-11-07.json").read_text(encoding="utf-8"))
+        self.assertEqual(reboot["status"], "passed_actual_reboot")
+        before = datetime.fromisoformat(reboot["bootBefore"])
+        after = datetime.fromisoformat(reboot["bootAfter"])
+        self.assertGreater(after, before)
+        self.assertGreaterEqual(datetime.fromisoformat(reboot["verifiedAt"]), after)
+        self.assertEqual(reboot["clipOrder"], ["测试视频C-5秒.mp4", "测试视频A-4秒.mp4"])
+        self.assertEqual(reboot["totalDuration"], 9)
+        for check in ("requirementsPreserved", "runSnapshotPreserved", "archiveSourcePreserved"):
+            self.assertTrue(reboot[check])
+        for file in reboot["files"]:
+            content = (DEMO / file["fixture"]).read_bytes()
+            self.assertEqual(len(content), file["size"])
+            self.assertEqual(hashlib.sha256(content).hexdigest(), file["sha256"])
+        self.assertEqual(reboot["archiveSha256"], reboot["files"][1]["sha256"])
+        nas = json.loads((evidence_dir / "nas-2026-11-07.json").read_text(encoding="utf-8"))
+        self.assertEqual(nas["status"], "passed_live_nas")
+        self.assertEqual(nas["httpStatus"], 200)
+        self.assertEqual(urlsplit(nas["configuredAddress"]).netloc, urlsplit(nas["openedAddress"]).netloc)
+        self.assertIn("Synology", nas["title"])
+        self.assertIn("NAS 入口", nas["openedThrough"])
+        for evidence in (nas, reboot):
+            self.assertRegex(evidence["verifiedAt"], r"^2026-11-07T")
+            self.assertIn("node scripts/", evidence["verificationCommand"])
 
 
 if __name__ == "__main__":

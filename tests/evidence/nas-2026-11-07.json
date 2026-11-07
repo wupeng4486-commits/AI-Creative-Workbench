@@ -1,0 +1,12 @@
+{
+  "status": "passed_live_nas",
+  "verifiedAt": "2026-11-07T12:25:49.170Z",
+  "configuredAddress": "http://192.168.110.72:5000/",
+  "openedAddress": "http://192.168.110.72:5000/#/",
+  "httpStatus": 200,
+  "title": "SynologyNAS - Synology NAS",
+  "openedThrough": "资产库 / NAS 入口 / 打开网页",
+  "screenshot": ".tmp/nas-acceptance/nas-page.png",
+  "rawEvidence": ".tmp/nas-acceptance/evidence.json",
+  "verificationCommand": "node scripts/verify-nas.mjs http://192.168.110.72:5000"
+}

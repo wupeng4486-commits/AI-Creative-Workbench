@@ -1,0 +1,20 @@
+{
+  "status": "passed_actual_reboot",
+  "bootBefore": "2026-11-07T06:00:40.5000000Z",
+  "bootAfter": "2026-11-07T12:21:25.5000000Z",
+  "verifiedAt": "2026-11-07T12:22:42.683Z",
+  "datasetId": "ds-20261107121639-981lbw",
+  "draftId": "800de84f-aedf-4809-8bec-19d2242fdbf4",
+  "clipOrder": ["测试视频C-5秒.mp4", "测试视频A-4秒.mp4"],
+  "totalDuration": 9,
+  "requirementsPreserved": true,
+  "runSnapshotPreserved": true,
+  "archiveSourcePreserved": true,
+  "files": [
+    {"fixture": "测试视频C-5秒.mp4", "sha256": "bb1a9fccee98fda20b8ef78c451c62fd65fab1d432db617f6cdf4fce1b4b0fb6", "size": 3625},
+    {"fixture": "测试视频A-4秒.mp4", "sha256": "9898385bc5aaaebbcebfcb0948fba45e157e6565bdba39539a52c34b4a8e6834", "size": 3086}
+  ],
+  "archiveSha256": "9898385bc5aaaebbcebfcb0948fba45e157e6565bdba39539a52c34b4a8e6834",
+  "rawEvidence": ".tmp/reboot-acceptance/evidence.json",
+  "verificationCommand": "node scripts/reboot-acceptance.mjs verify"
+}

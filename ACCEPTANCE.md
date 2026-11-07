@@ -1,7 +1,7 @@
 # PRD 验收台账
 
 本文件登记 PRD 第 10 节的 39 项验收编号。每项包含实际结果、证据与日期。
-2026-11-07 已执行全部自动化验收。电脑重启与真实 NAS 可达性保留人工验收状态。
+2026-11-07 已执行全部自动化验收，并通过真实 Windows 重启及用户 NAS 网页可达性核验，39 项均有通过证据。
 
 | 编号 | 实现任务 | 验证任务 | 当前状态 | 证据 |
 | --- | --- | --- | --- | --- |
@@ -28,7 +28,7 @@
 | ASSET-01 | T04、T09 | T23 | 通过 | 2026-11-07，`tests/e2e/assets.spec.ts`、`tests/e2e/media-errors.spec.ts`、`tests/integration/files.test.ts`，真实图视频文档、备注、标签、下载字节 |
 | ASSET-02 | T04、T09 | T23 | 通过 | 2026-11-07，`tests/integration/assets-api.test.ts`、`tests/integration/acceptance-regressions.test.ts`、`tests/ui/shell.test.tsx`，不支持预览、下载和导入写入失败 |
 | ASSET-03 | T09、T10、T16 | T23 | 通过 | 2026-11-07，`tests/e2e/collections-nas.spec.ts`、`tests/e2e/studio-drafts.spec.ts`、`tests/integration/assets-api.test.ts`，商品知识、集合与引用带入 |
-| NAS-01 | T10 | T23、T24 | 待人工验收 | 2026-11-07，`tests/e2e/collections-nas.spec.ts` 已验证可访问测试网页新标签及完整 Windows 路径剪贴板。尚待用户真实 NAS 网页可达性，需在实际网络环境打开并核对 |
+| NAS-01 | T10 | T23、T24 | 通过 | 2026-11-07，`tests/e2e/collections-nas.spec.ts` 验证完整路径剪贴板；`scripts/verify-nas.mjs` 从实际平台入口打开用户 NAS，返回 HTTP 200 及 Synology NAS 网页，见 `tests/evidence/nas-2026-11-07.json` |
 | CON-01 | T15 | T23 | 通过 | 2026-11-07，`tests/e2e/connectors.spec.ts`、`tests/integration/connectors.test.ts`，配置、连接同步演示、日志与停用 |
 | CON-02 | T15 | T23 | 通过 | 2026-11-07，`tests/e2e/connectors.spec.ts`、`tests/integration/connectors.test.ts`，显式导入与重试幂等 |
 | WF-01 | T13 | T23 | 通过 | 2026-11-07，`tests/e2e/workflows.spec.ts`，来源、步骤预览、共享独立复制及附件上传时保留未保存输入 |
@@ -36,7 +36,7 @@
 | WF-03 | T13、T20 | T23 | 通过 | 2026-11-07，`tests/e2e/results.spec.ts`、`tests/e2e/libtv.spec.ts`、`tests/integration/discovery.test.ts`，另存流程、LibTV 引用和首页数量 |
 | WF-04 | T14 | T23 | 通过 | 2026-11-07，`tests/e2e/libtv.spec.ts`、`tests/integration/demo-runs.test.ts`，批量条目、有效预览、部分失败与独立重试 |
 | CFG-01 | T10、T22 | T23 | 通过 | 2026-11-07，`tests/e2e/data-settings.spec.ts`、`tests/e2e/video-join.spec.ts`、`tests/integration/data-settings.test.ts`，共用入口与偏好重开持久化 |
-| DATA-01 | T03、T04、T16 | T23、T24 | 待电脑重启 | 2026-11-07，`tests/e2e/restart-acceptance.spec.ts` 已通过实际浏览器退出、服务进程终止重启、原文件字节与恢复。`scripts/reboot-acceptance.mjs` 已准备独立数据。尚待 Windows 真正重启后 verify 核对启动时间、草稿、顺序、历史和 SHA |
+| DATA-01 | T03、T04、T16 | T23、T24 | 通过 | 2026-11-07，`tests/e2e/restart-acceptance.spec.ts` 验证浏览器退出与服务重启；`scripts/reboot-acceptance.mjs` 在实际 Windows 重启后通过同一数据集、草稿、顺序、历史和 SHA 校验，见 `tests/evidence/reboot-2026-11-07.json` |
 | DATA-02 | T03 | T23 | 通过 | 2026-11-07，`tests/integration/seed.test.ts`、`tests/integration/data-settings.test.ts`，幂等初始化、已改示例和删除记录保护 |
 | BACK-01 | T06 | T23 | 通过 | 2026-11-07，`tests/integration/backup.test.ts`、`tests/e2e/data-settings.spec.ts`，完整清单、数据库、原文件和实际下载 |
 | BACK-02 | T07 | T23、T24 | 通过 | 2026-11-07，`tests/e2e/restart-acceptance.spec.ts`、`tests/integration/restore.test.ts`，隔离恢复、重启、C/A 九秒与来源快照 |
@@ -63,7 +63,7 @@
 | T20 | 已完成 | 2e03719 | npm run check、results/studio-production/design-deliveries e2e | 156 项服务端、21 项界面、5 项相关 e2e 通过 |
 | T21 | 已完成 | b1c776d | npm run check、discovery/navigation e2e | 159 项服务端、21 项界面、5 项相关 e2e 通过 |
 | T22 | 已完成 | fc521e2 | npm run check、data-settings/collections-nas/discovery e2e | 163 项服务端、21 项界面、7 项相关 e2e 通过 |
-| T23 | 验证中 | 本次 T23 自动化提交 | npm run check、全部 Playwright、Python unittest、重启校验 prepare | 168 项服务端、24 项界面、45 项 e2e、10 项 Python 测试通过。尚待电脑重启与真实 NAS 人工证据 |
+| T23 | 已完成 | b35ae0f 及本次重启与 NAS 验收提交 | npm run check、全部 Playwright、Python unittest、重启 verify、真实 NAS 浏览器核验 | 168 项服务端、24 项界面、45 项 e2e、11 项 Python 测试通过。39 项验收全部有通过证据 |
 
 ### T11 验证记录
 
@@ -148,14 +148,14 @@ SK-01 的智能体详情选择与完整关联联调按计划在 T12 完成，PRD
 
 ### T23 自动化验证记录
 
-2026-11-07 完成全部现有自动化测试，合计 247 项，零跳过。类型检查、生产构建及 Git 差异检查通过。39 项矩阵逐项关联有效测试，37 项通过，2 项保留人工验收状态。
+2026-11-07 重启前完成全部现有自动化测试，合计 247 项，零跳过。类型检查、生产构建及 Git 差异检查通过。随后补齐真实电脑重启及 NAS 网页证据，39 项矩阵全部通过，新增证据检查后 Python 为 11 项。
 
 最后一轮完整运行输出保存在 `.tmp/t23-tests.log`、`.tmp/t23-browser-tests.log` 和 `.tmp/t23-document-tests.log`。
 
 - `tests/integration/acceptance-regressions.test.ts` 的 5 项验证恢复初始化失败后的原连接与指针回滚、共享原文件保留、删除失败事务回滚、磁盘写满反馈与重试、流中断清理、遗漏备份清单拒绝及流式导入期间切换等待。
 - `tests/ui/acceptance.test.tsx` 的 3 项验证弹窗连续输入焦点、真实文本读取与空文件、读取失败和损坏媒体的反馈及下载。
 - `tests/e2e/restart-acceptance.spec.ts` 实际启动独立服务和浏览器，退出浏览器、终止服务进程后重新启动，核对草稿要求、C/A 九秒顺序、制作历史、来源及原文件字节，再执行隔离恢复。
-- `tests/e2e/collections-nas.spec.ts` 实际打开可访问的测试网页新标签，并从系统剪贴板读回完整 Windows 路径。真实 NAS 可达性仍需用户实际网络环境证据。
+- `tests/e2e/collections-nas.spec.ts` 实际打开可访问的测试网页新标签，并从系统剪贴板读回完整 Windows 路径。用户随后提供真实 NAS 地址，经 `scripts/verify-nas.mjs` 从平台入口打开并验证通过。
 - 全量回归发现工作流上传附件引发后台刷新、覆盖未保存输入的问题，已修复并增加上传后原参数、步骤和输入说明保持不变的断言。恢复初始化故障测试先复现原连接关闭及新连接泄漏，再完成回滚与关闭修复。完整套件重跑全部通过。
 - `tests/test_fixtures.py` 将初始化阶段“全部待验收”检查升级为交付阶段的台账检查，继续严格验证 39 个唯一编号、状态、日期、真实证据文件和待验收剩余操作。
 
@@ -170,3 +170,7 @@ node scripts/reboot-acceptance.mjs verify
 ```
 
 脚本先核对 Windows 实际启动时间已经变化，再核对同一数据集、完整草稿、C/A 顺序、九秒时长、历史、来源快照和输入及成果原文件 SHA。全部通过后更新 `.tmp/reboot-acceptance/evidence.json` 的状态与重启后时间。未经历实际电脑重启时校验命令返回失败。完成这项与真实 NAS 可达性证据后关闭 T23，按顺序继续 T24 的 Windows 启停交付和最终全量验证。
+
+2026-11-07 20:22（北京时间）实际重启后 verify 全部通过。Windows 启动时间由当天 14:00:40 变为 20:21:25。草稿、历史、C/A 九秒顺序、来源与输入及成果 SHA 均保留。摘要保存于 `tests/evidence/reboot-2026-11-07.json`。
+
+2026-11-07 20:25（北京时间）从平台 NAS 入口实际打开 `http://192.168.110.72:5000/`，新标签返回 HTTP 200，标题包含 Synology NAS。摘要保存于 `tests/evidence/nas-2026-11-07.json`，完整截图保存在 `.tmp/nas-acceptance/nas-page.png`。T23 验收完成。
