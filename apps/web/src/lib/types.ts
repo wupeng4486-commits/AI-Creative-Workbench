@@ -61,3 +61,21 @@ export interface Skill {
   agents: Array<{ id: string; name: string }>;
   workflows: Array<{ id: string; name: string }>;
 }
+
+export interface Agent {
+  id: string;
+  name: string;
+  purpose: string;
+  domain: string;
+  origin: "owned" | "shared";
+  author: string;
+  instructions: string;
+  output_requirements: string;
+  cautions: string;
+  example_dialog: Array<{ question: string; answer: string }>;
+  created_at: string;
+  updated_at: string;
+  skills: Array<{ id: string; name: string }>;
+  products: Array<{ id: string; name: string }>;
+  assets: Array<{ id: string; name: string }>;
+}

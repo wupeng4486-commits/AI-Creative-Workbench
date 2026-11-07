@@ -16,6 +16,7 @@ import { registerAssetRoutes } from "./routes/assets.ts";
 import { registerCollectionRoutes } from "./routes/collections.ts";
 import { registerSettingsRoutes } from "./routes/settings.ts";
 import { registerSkillRoutes } from "./routes/skills.ts";
+import { registerAgentRoutes } from "./routes/agents.ts";
 
 export interface AppDeps {
   config: AppConfig;
@@ -129,6 +130,7 @@ export async function buildApp({ config, version }: AppDeps): Promise<FastifyIns
   await registerCollectionRoutes(app, ctx);
   await registerSettingsRoutes(app, ctx);
   await registerSkillRoutes(app, ctx);
+  await registerAgentRoutes(app, ctx);
 
   app.setNotFoundHandler(async (request, reply) => {
     if (request.url.startsWith("/api/")) {
