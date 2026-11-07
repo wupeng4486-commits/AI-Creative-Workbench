@@ -17,8 +17,8 @@ export interface DemoRun {
   demo: boolean;
   parameters: Record<string, unknown>;
   inputSnapshot: { inputs: Record<string, unknown>; parameters: Record<string, unknown>; resources: Array<{ id: string; name: string; kind: string }> };
-  result: { logs?: string[]; shots?: Array<{ title: string; description: string; order: number }> };
-  items: Array<{ id: string; label: string; status: string; message: string; result: { fileId?: string; contentUrl?: string; downloadUrl?: string; previewKind?: PreviewKind; demo?: boolean } }>;
+  result: { logs?: string[]; shots?: Array<{ title: string; description: string; order: number }>; delivery?: { version: number; note: string } };
+  items: Array<{ id: string; label: string; status: string; message: string; result: { fileId?: string; contentUrl?: string; downloadUrl?: string; previewKind?: PreviewKind; role?: string; demo?: boolean } }>;
 }
 
 const STATUS: Record<string, string> = { queued: "已排队", running: "正在演示", completed: "演示完成", failed: "演示失败", stopped: "已停止", interrupted: "已中断" };

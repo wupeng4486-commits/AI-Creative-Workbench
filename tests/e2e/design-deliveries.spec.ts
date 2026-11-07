@@ -1,0 +1,34 @@
+import path from "node:path";
+import { expect, test } from "@playwright/test";
+
+test("美工设计保存真实预览、源文件及两次独立交付版本 (ST-01)", async ({ page }) => {
+  await page.goto("/studio/design");
+  await page.getByRole("button", { name: "新建草稿", exact: true }).click();
+  await page.getByLabel("创作要求", { exact: true }).fill("T18 商品主视觉设计");
+  await page.getByLabel("设计类型", { exact: true }).selectOption("主图");
+  await page.getByLabel("设计尺寸", { exact: true }).fill("320×200");
+  await page.getByLabel("设计文案", { exact: true }).fill("清爽日常");
+  await page.getByLabel("交付要求", { exact: true }).fill("预览与可编辑源文件");
+  await page.getByLabel("本次版本说明", { exact: true }).fill("T18 第一版交付");
+  await page.getByLabel("导入预览稿", { exact: true }).setInputFiles(path.resolve(import.meta.dirname, "../../fixtures/demo/测试产品图.png"));
+  const source = '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200"><rect width="320" height="200" fill="#aaddff"/></svg>';
+  await page.getByLabel("导入设计源文件", { exact: true }).setInputFiles({ name: "T18设计源文件.svg", mimeType: "image/svg+xml", buffer: Buffer.from(source) });
+  await page.getByRole("button", { name: "保存交付版本", exact: true }).click();
+  const preview = page.getByRole("article", { name: "制作预览", exact: true });
+  await expect(preview.getByRole("heading", { name: "交付版本 1 已登记", exact: true })).toBeVisible();
+  await expect(preview.locator("img")).toBeVisible();
+  const sourceLink = preview.getByRole("link", { name: "下载源文件 T18设计源文件.svg", exact: true });
+  expect(await (await page.request.get((await sourceLink.getAttribute("href"))!)).text()).toBe(source);
+  const firstId = await preview.getByLabel("制作历史", { exact: true }).inputValue();
+  await page.getByLabel("本次版本说明", { exact: true }).fill("T18 第二版调整版式");
+  await page.getByRole("button", { name: "保存交付版本", exact: true }).click();
+  await expect(preview.getByRole("heading", { name: "交付版本 2 已登记", exact: true })).toBeVisible();
+  await preview.getByLabel("制作历史", { exact: true }).selectOption(firstId);
+  await preview.getByText("输入快照与制作日志", { exact: true }).click();
+  await expect(preview.locator("pre")).toContainText("T18 第一版交付");
+  await expect(preview.locator("pre")).not.toContainText("T18 第二版调整版式");
+  await page.reload();
+  await expect(page.getByLabel("设计尺寸", { exact: true })).toHaveValue("320×200");
+  await expect(page.getByLabel("本次版本说明", { exact: true })).toHaveValue("T18 第二版调整版式");
+  await expect(preview.getByRole("link", { name: "下载源文件 T18设计源文件.svg", exact: true })).toBeVisible();
+});

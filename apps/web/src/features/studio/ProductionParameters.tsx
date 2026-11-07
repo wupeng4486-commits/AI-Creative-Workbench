@@ -17,5 +17,12 @@ export function ProductionParameters({ draft, edit, errors }: { draft: Draft; ed
     <label className="field">构图要求<textarea aria-label="构图要求" value={String(draft.parameters.composition ?? "")} onChange={(event) => update("composition", event.target.value)} /></label>
     <label className="field">风格要求<textarea aria-label="风格要求" value={String(draft.parameters.style ?? "")} onChange={(event) => update("style", event.target.value)} /><FieldError message={errors.style} /></label>
   </fieldset>;
+  if (draft.creationType === "design") return <fieldset>
+    <legend>美工设计要求</legend>
+    <label className="field">设计类型<select aria-label="设计类型" value={String(draft.parameters.designType ?? "")} onChange={(event) => update("designType", event.target.value)}><option value="">请选择</option>{["主图", "详情页", "海报", "其他"].map((type) => <option key={type}>{type}</option>)}</select><FieldError message={errors.designType} /></label>
+    <label className="field">设计尺寸<input aria-label="设计尺寸" placeholder="例如 1200×1600 或 A4" value={String(draft.parameters.size ?? "")} onChange={(event) => update("size", event.target.value)} /><FieldError message={errors.size} /></label>
+    <label className="field">文案<textarea aria-label="设计文案" value={String(draft.parameters.copy ?? "")} onChange={(event) => update("copy", event.target.value)} /></label>
+    <label className="field">交付要求<textarea aria-label="交付要求" value={String(draft.parameters.deliveryRequirements ?? "")} onChange={(event) => update("deliveryRequirements", event.target.value)} /><FieldError message={errors.deliveryRequirements} /></label>
+  </fieldset>;
   return null;
 }

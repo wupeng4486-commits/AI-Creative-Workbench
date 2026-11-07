@@ -10,6 +10,7 @@ import { DraftSaveQueue } from "./DraftSaveQueue.ts";
 import { ProductionParameters } from "./ProductionParameters.tsx";
 import { StudioProduction } from "./StudioProduction.tsx";
 import { FieldError } from "../../components/FieldError.tsx";
+import { DesignDelivery } from "./DesignDelivery.tsx";
 
 export function DraftEditor({ initial, datasetId, onNew }: { initial: Draft; datasetId: string; onNew: () => Promise<unknown> }) {
   const navigate = useNavigate();
@@ -62,9 +63,10 @@ export function DraftEditor({ initial, datasetId, onNew }: { initial: Draft; dat
         <label className="field">创作要求<textarea rows={8} aria-label="创作要求" value={draft.requirements} onChange={(event) => queue.edit({ requirements: event.target.value })} /></label>
         <FieldError message={fieldErrors.requirements} />
         <ProductionParameters draft={draft} edit={(changes) => queue.edit(changes)} errors={fieldErrors} />
+        {draft.creationType === "design" && <DesignDelivery queue={queue} assets={assets.data?.items ?? []} datasetId={datasetId} errors={fieldErrors} onValidation={setFieldErrors} />}
         <p className="hint">修订 {draft.revision} · 保存在本机</p>
       </article>
-      {["ai_video", "ai_image"].includes(draft.creationType) && <StudioProduction queue={queue} datasetId={datasetId} onValidation={setFieldErrors} />}
+      {["ai_video", "ai_image", "design"].includes(draft.creationType) && <StudioProduction queue={queue} datasetId={datasetId} onValidation={setFieldErrors} />}
       <article className="card">
         <h2>关联资源</h2>
         <label className="field">智能体<select aria-label="选择智能体" value={draft.agentId ?? ""} onChange={(event) => {

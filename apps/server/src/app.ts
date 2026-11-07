@@ -21,6 +21,7 @@ import { registerWorkflowRoutes } from "./routes/workflows.ts";
 import { registerRunRoutes } from "./routes/runs.ts";
 import { registerConnectorRoutes } from "./routes/connectors.ts";
 import { registerDraftRoutes } from "./routes/drafts.ts";
+import { registerDesignDeliveryRoutes } from "./routes/design-deliveries.ts";
 import { appError } from "./http/errors.ts";
 
 export interface AppDeps {
@@ -146,6 +147,7 @@ export async function buildApp({ config, version }: AppDeps): Promise<FastifyIns
   const runner = await registerRunRoutes(app, ctx);
   await registerConnectorRoutes(app, ctx, runner);
   await registerDraftRoutes(app, ctx);
+  await registerDesignDeliveryRoutes(app, ctx);
 
   app.setNotFoundHandler(async (request, reply) => {
     if (request.url.startsWith("/api/")) {
