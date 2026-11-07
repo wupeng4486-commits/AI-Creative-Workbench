@@ -7,6 +7,7 @@ import { APP_VERSION, type SystemInfo } from "@workbench/shared";
 import type { AppConfig } from "./config.ts";
 import { createContext } from "./context.ts";
 import { getIntegrations, getPreferences } from "./services/settings.ts";
+import { registerFileRoutes } from "./routes/files.ts";
 
 export interface AppDeps {
   config: AppConfig;
@@ -108,6 +109,8 @@ export async function buildApp({ config, version }: AppDeps): Promise<FastifyIns
     integrations: getIntegrations(ctx.db),
     preferences: getPreferences(ctx.db),
   }));
+
+  await registerFileRoutes(app, ctx);
 
   app.setNotFoundHandler(async (request, reply) => {
     if (request.url.startsWith("/api/")) {

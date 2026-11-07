@@ -72,9 +72,11 @@ class FixtureTests(unittest.TestCase):
             with self.subTest(video=name):
                 data = (DEMO / name).read_bytes()
                 self.assertEqual(mp4_duration_ms(data), duration)
-                index = data.find(b"tkhd")
-                width = struct.unpack_from(">I", data, index + 80)[0] >> 16
-                height = struct.unpack_from(">I", data, index + 84)[0] >> 16
+                # tkhd ends with 32.32 fixed-point width and height.
+                index = data.find(b"tkhd") - 4
+                size = struct.unpack_from(">I", data, index)[0]
+                width = struct.unpack_from(">I", data, index + size - 8)[0] >> 16
+                height = struct.unpack_from(">I", data, index + size - 4)[0] >> 16
                 self.assertEqual((width, height), (640, 360))
 
     def test_image_and_document_are_valid(self):
