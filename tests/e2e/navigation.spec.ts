@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 const MODULES = [
-  ["首页总览", "/home"],
+  ["新对话", "/chat"],
+  ["团队动态", "/home"],
   ["智能体", "/agents"],
   ["创作工作室", "/studio"],
   ["资产库", "/assets"],
@@ -11,11 +12,11 @@ const MODULES = [
   ["数据与设置", "/settings"],
 ] as const;
 
-test("八个模块依次可访问且标题正确", async ({ page }) => {
+test("新对话与团队动态等九个模块依次可访问且标题正确", async ({ page }) => {
   for (const [label, path] of MODULES) {
     await page.goto(path);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-      label === "创作工作室" ? "AI 产品视频" : label,
+      label === "创作工作室" ? "AI 产品视频" : label === "新对话" ? "今天，想一起完成什么？" : label,
     );
     const nav = page.getByRole("navigation", { name: "主导航" });
     await expect(nav.getByRole("link", { name: label })).toBeVisible();

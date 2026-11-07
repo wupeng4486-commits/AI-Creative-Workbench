@@ -32,7 +32,7 @@ function renderShell() {
       <MemoryRouter initialEntries={["/home"]}>
         <Routes>
           <Route element={<AppShell />}>
-            <Route path="/home" element={<h1>首页总览</h1>} />
+            <Route path="/home" element={<h1>团队动态</h1>} />
           </Route>
         </Routes>
       </MemoryRouter>
@@ -41,12 +41,13 @@ function renderShell() {
 }
 
 describe("navigation shell (T08)", () => {
-  it("renders the eight modules in PRD order without numeric prefixes", () => {
+  it("puts new chat above team activity and preserves the remaining module order", () => {
     renderShell();
     const nav = screen.getByRole("navigation", { name: "主导航" });
     const links = within(nav).getAllByRole("link");
     expect(links.map((link) => link.textContent)).toEqual([
-      "首页总览",
+      "新对话",
+      "团队动态",
       "智能体",
       "创作工作室",
       "资产库",
@@ -55,13 +56,13 @@ describe("navigation shell (T08)", () => {
       "工作流",
       "数据与设置",
     ]);
-    expect(NAV_ITEMS).toHaveLength(8);
+    expect(NAV_ITEMS).toHaveLength(9);
     for (const item of NAV_ITEMS) expect(item.label).not.toMatch(/^\d/);
   });
 
   it("marks the current module and keeps the demo flag visible", () => {
     renderShell();
-    const active = screen.getByRole("link", { name: "首页总览" });
+    const active = screen.getByRole("link", { name: "团队动态" });
     expect(active.className).toContain("active");
     expect(screen.getByText("本地演示")).toBeVisible();
   });
@@ -69,6 +70,7 @@ describe("navigation shell (T08)", () => {
   it("opens global search with Ctrl+K and closes with Escape", async () => {
     const user = userEvent.setup();
     renderShell();
+    expect(screen.getByRole("button", { name: "打开全局搜索", exact: true })).toBeVisible();
     await user.keyboard("{Control>}k{/Control}");
     const dialog = screen.getByRole("dialog", { name: "全局搜索" });
     expect(dialog).toBeVisible();

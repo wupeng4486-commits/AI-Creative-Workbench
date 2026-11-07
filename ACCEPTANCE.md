@@ -5,7 +5,7 @@
 
 | 编号 | 实现任务 | 验证任务 | 当前状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| NAV-01 | T08 | T23、T24 | 通过 | 2026-11-07，`tests/e2e/navigation.spec.ts`，八模块顺序、标题和导航状态 |
+| NAV-01 | T08 | T23、T24 | 通过 | 2026-11-07，`tests/e2e/navigation.spec.ts`，按用户追加要求核对九模块顺序、标题和导航状态 |
 | NAV-02 | T08、T16 | T23 | 通过 | 2026-11-07，`tests/e2e/navigation.spec.ts`，四创作类型与通用详情标题 |
 | NAV-03 | T21 | T23 | 通过 | 2026-11-07，`tests/e2e/discovery.spec.ts`，按原 ID 打开、返回搜索词与来源筛选 |
 | HOME-01 | T21 | T23 | 通过 | 2026-11-07，`tests/e2e/discovery.spec.ts`、`tests/integration/discovery.test.ts`，智能体技能增删与去重目录数量 |
@@ -191,3 +191,20 @@ node scripts/reboot-acceptance.mjs verify
 `tests/e2e/launcher-acceptance.spec.ts` 的 3 项直接调用 Windows PowerShell 和 CMD，验证重复启动同一 PID、错误数据目录保护、伪装应用名的端口占用保护、草稿保存后启停重开，以及实际 CMD 入口在屏蔽外部网络请求时使用本地页面、解码视频、下载恢复完整备份和重开读取原文件。测试修正了首次空数据集的新建草稿前置步骤及 CMD 参数引用，并将实际入口文件固定为 Windows CRLF 行尾。
 
 交付版本为 0.1.0。`使用说明.md` 包含启动停止、目录、八模块、制作与示例范围、共用入口及完整备份恢复操作。`TEST_REPORT.md` 汇总最终 252 项测试、真实电脑重启与 NAS 证据。最终运行日志保存在 `.tmp/final-check.log`、`.tmp/final-browser-tests.log`、`.tmp/final-document-tests.log`。
+
+### 追加变更 U01 主 Agent 入口与工作空间界面
+
+2026-11-07 按用户要求，将“首页总览”重命名为“团队动态”，在其上方新增“新对话”，默认进入 `/chat`。原 `/home` 地址及筛选条件继续定位团队动态。页面面向团队内部通用主 Agent，当前提供输入草稿、场景提示与明确的模型待接入状态，草稿保存于当前浏览器。
+
+导航、面包屑、全局搜索、卡片、按钮、筛选和输入组件统一为浅色工作空间样式，提供紫色强调、清晰来源徽标及窄屏布局。共享内容、实时统计、最近使用和本机动态继续通过原有服务读取。
+
+参考 `https://agent.creao.ai/chat` 在当前环境跳转登录，浏览器安全策略拒绝站点访问。本次依据此前可读取的 CREAO 公开产品说明与现有工程完成设计，登录后界面的视觉对照尚未执行。
+
+- `tests/ui/chat.test.tsx` 的 7 项验证待接入状态、提示保留已有输入与焦点、草稿重开、损坏存储、写入失败及恢复、回车编辑和目录链接。
+- `tests/e2e/chat.spec.ts` 的 3 项验证默认入口、九模块顺序、原 `/home` 筛选链接、草稿切换刷新、全局搜索及 390 像素窄屏。
+- 原导航、品牌、共享内容和 NAS 测试按用户新命名与默认入口调整，保持原业务断言。首次窄屏测试检出样式加载顺序问题，修复后重新执行同一宽度与操作断言。全量回归发现全局搜索按钮与目录搜索输入框的标签重叠，已使用独立的“打开全局搜索”名称并重跑原目录搜索用例。
+- 桌面新对话、团队动态、智能体及工作室已查看实际渲染，截图保存在 `.tmp/chat-desktop.png`、`.tmp/team-activity-desktop.png`、`.tmp/agents-desktop.png`、`.tmp/studio-desktop.png`，手机截图保存在 `.tmp/chat-mobile.png`。
+
+完整验证为 168 项服务端、31 项界面、51 项浏览器与 12 项 Python 测试，共 262 项，零跳过。类型检查、生产构建和 Git 差异检查通过。日志保存在 `.tmp/workspace-check.log`、`.tmp/workspace-browser-tests.log`、`.tmp/workspace-document-tests.log`。
+
+全量通过后，使用正式启停脚本重启 `http://127.0.0.1:4173`，实际浏览器确认默认进入新对话、九项导航、禁用发送与团队动态统计。数据集 `ds-20261107124438-f4pg57` 及全部记录数量与重启前一致，页面脚本、样式与接口没有加载错误。证据保存在 `.tmp/workspace-running-verification.json`，实际运行截图为 `.tmp/running-chat-desktop.png`。

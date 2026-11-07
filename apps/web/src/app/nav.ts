@@ -7,6 +7,7 @@ import {
   GitBranch,
   Database,
   LayoutDashboard,
+  SquarePen,
 } from "lucide-react";
 
 export interface NavItem {
@@ -15,9 +16,10 @@ export interface NavItem {
   icon: typeof Users;
 }
 
-/** Navigation order is fixed by the PRD and never numbered. */
+/** The general agent is the first entry, followed by the team workspace. */
 export const NAV_ITEMS: NavItem[] = [
-  { path: "/home", label: "首页总览", icon: LayoutDashboard },
+  { path: "/chat", label: "新对话", icon: SquarePen },
+  { path: "/home", label: "团队动态", icon: LayoutDashboard },
   { path: "/agents", label: "智能体", icon: Users },
   { path: "/studio", label: "创作工作室", icon: Sparkles },
   { path: "/assets", label: "资产库", icon: FolderOpen },

@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./shell.tsx";
 import { HomePage } from "../features/home/HomePage.tsx";
@@ -14,13 +13,15 @@ import { SkillDetailPage } from "../features/skills/SkillDetailPage.tsx";
 import { WorkflowsPage } from "../features/workflows/WorkflowsPage.tsx";
 import { WorkflowDetailPage } from "../features/workflows/WorkflowDetailPage.tsx";
 import { SettingsPage } from "../features/settings/SettingsPage.tsx";
+import { ChatPage } from "../features/chat/ChatPage.tsx";
 
 export function App() {
   return (
     <>
       <Routes>
         <Route element={<AppShell />}>
-          <Route index element={<Navigate to="/home" replace />} />
+          <Route index element={<Navigate to="/chat" replace />} />
+          <Route path="/chat" element={<ChatPage />} />
           <Route path="/home" element={<HomePage />} />
           <Route path="/agents" element={<AgentsPage />} />
           <Route path="/agents/:id" element={<AgentDetailPage />} />
@@ -36,7 +37,7 @@ export function App() {
           <Route path="/workflows" element={<WorkflowsPage />} />
           <Route path="/workflows/:id" element={<WorkflowDetailPage />} />
           <Route path="/settings" element={<SettingsPage />} />
-          <Route path="*" element={<Navigate to="/home" replace />} />
+          <Route path="*" element={<Navigate to="/chat" replace />} />
         </Route>
       </Routes>
     </>

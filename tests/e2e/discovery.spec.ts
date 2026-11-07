@@ -51,7 +51,7 @@ test("全局搜索按类型分组，返回保留关键词、目录筛选并显�
   await form.getByLabel("智能体用途").fill("首页联动验证");
   await form.getByRole("button", { name: "创建并编辑", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("智能体详情");
-  await page.getByRole("navigation", { name: "主导航" }).getByRole("link", { name: "首页总览" }).click();
+  await page.getByRole("navigation", { name: "主导航" }).getByRole("link", { name: "团队动态" }).click();
   await expect(page.getByRole("region", { name: "数量看板" }).getByRole("link", { name: /团队智能体/ }).locator("strong")).toHaveText(String(before.counts.agents + 1));
   await expect(page.getByRole("region", { name: "本机动态" }).getByRole("link", { name: /新建智能体：首页联动智能体/ })).toBeVisible();
 });

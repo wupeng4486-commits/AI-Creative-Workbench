@@ -60,7 +60,7 @@ test("NAS 网页与 Windows 路径入口分别可用 (NAS-01)", async ({ page, c
   await page.getByRole("link", { name: "打开网页", exact: true }).click();
   const popup = await popupWait;
   await expect(popup).toHaveURL(`${baseURL}/home`);
-  await expect(popup.getByRole("heading", { level: 1 })).toHaveText("首页总览");
+  await expect(popup.getByRole("heading", { level: 1 })).toHaveText("团队动态");
   await popup.close();
 
   await page.getByLabel("NAS 名称").fill("共享盘");
