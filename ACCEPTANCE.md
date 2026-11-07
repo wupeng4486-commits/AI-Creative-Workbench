@@ -50,20 +50,29 @@
 | 任务 | 状态 | 提交 | 验证命令 | 结果 |
 | --- | --- | --- | --- | --- |
 | T01 | 已完成 | 66b436b | fixture 生成、文档检查 | 10 项 Python 测试通过 |
-| T02 | 已完成 | T02 提交 | build、typecheck、test、test:e2e、启动/停止脚本 | 9 项集成测试、2 项 e2e 通过 |
-| T11 | 已完成 | 本次 T11 提交 | npm run check、npx playwright test、Python unittest、git diff --check | 84 项服务端、15 项界面、14 项 e2e、10 项 Python 测试通过 |
-| T12 | 已完成 | 本次 T12 提交 | npm run check、agents/skills/navigation e2e | 91 项服务端、15 项界面、10 项相关 e2e 通过 |
-| T13 | 已完成 | 本次 T13 提交 | npm run check、workflows e2e | 98 项服务端、15 项界面、2 项工作流 e2e 通过 |
-| T14 | 已完成 | 本次 T14 提交 | npm run check、libtv/workflows e2e | 111 项服务端、15 项界面、4 项相关 e2e 通过 |
-| T15 | 已完成 | 本次 T15 提交 | npm run check、connectors/libtv e2e | 118 项服务端、15 项界面、3 项相关 e2e 通过 |
-| T16 | 已完成 | 本次 T16 提交 | npm run check、studio-drafts/navigation e2e | 127 项服务端、21 项界面、8 项相关 e2e 通过 |
-| T17 | 已完成 | 本次 T17 提交 | npm run check、studio-production/studio-drafts e2e | 134 项服务端、21 项界面、7 项相关 e2e 通过 |
-| T18 | 已完成 | 本次 T18 提交 | npm run check、design-deliveries/studio-production/studio-drafts e2e | 140 项服务端、21 项界面、9 项相关 e2e 通过 |
-| T19 | 已完成 | 本次 T19 提交 | npm run check、全部 e2e、Python unittest | 147 项服务端、21 项界面、36 项 e2e、10 项 Python 测试通过 |
+| T02 | 已完成 | c6b1f34 | build、typecheck、test、test:e2e、启动/停止脚本 | 9 项集成测试、2 项 e2e 通过 |
+| T03 | 已完成 | 3620ff4 | 数据迁移、幂等示例与重启测试 | 最终完整套件复验通过 |
+| T04 | 已完成 | 26aec5a | 原文件、元数据、文本与 Range 测试 | 最终完整套件复验通过 |
+| T05 | 已完成 | a035e50 | 引用、事务、幂等与历史测试 | 最终完整套件复验通过 |
+| T06 | 已完成 | 158ee10 | 完整备份、下载和文件清单测试 | 最终完整套件复验通过 |
+| T07 | 已完成 | 0d3610c | 恢复、取消、故障注入与重启测试 | 最终完整套件复验通过 |
+| T08 | 已完成 | d4fb836 | 八模块导航与公共界面测试 | 最终完整套件复验通过 |
+| T09 | 已完成 | 4c30aca | 资产、商品知识与媒体测试 | 最终完整套件复验通过 |
+| T10 | 已完成 | 8e8cb73 | 集合、NAS 与共用配置测试 | 最终完整套件复验通过 |
+| T11 | 已完成 | e73bba4 | npm run check、npx playwright test、Python unittest、git diff --check | 84 项服务端、15 项界面、14 项 e2e、10 项 Python 测试通过 |
+| T12 | 已完成 | 64bab0a | npm run check、agents/skills/navigation e2e | 91 项服务端、15 项界面、10 项相关 e2e 通过 |
+| T13 | 已完成 | 8b76a89 | npm run check、workflows e2e | 98 项服务端、15 项界面、2 项工作流 e2e 通过 |
+| T14 | 已完成 | acf49dc | npm run check、libtv/workflows e2e | 111 项服务端、15 项界面、4 项相关 e2e 通过 |
+| T15 | 已完成 | 3c1542c | npm run check、connectors/libtv e2e | 118 项服务端、15 项界面、3 项相关 e2e 通过 |
+| T16 | 已完成 | fa23119 | npm run check、studio-drafts/navigation e2e | 127 项服务端、21 项界面、8 项相关 e2e 通过 |
+| T17 | 已完成 | 22144bb | npm run check、studio-production/studio-drafts e2e | 134 项服务端、21 项界面、7 项相关 e2e 通过 |
+| T18 | 已完成 | bb1bdcf | npm run check、design-deliveries/studio-production/studio-drafts e2e | 140 项服务端、21 项界面、9 项相关 e2e 通过 |
+| T19 | 已完成 | 841d92c | npm run check、全部 e2e、Python unittest | 147 项服务端、21 项界面、36 项 e2e、10 项 Python 测试通过 |
 | T20 | 已完成 | 2e03719 | npm run check、results/studio-production/design-deliveries e2e | 156 项服务端、21 项界面、5 项相关 e2e 通过 |
 | T21 | 已完成 | b1c776d | npm run check、discovery/navigation e2e | 159 项服务端、21 项界面、5 项相关 e2e 通过 |
 | T22 | 已完成 | fc521e2 | npm run check、data-settings/collections-nas/discovery e2e | 163 项服务端、21 项界面、7 项相关 e2e 通过 |
-| T23 | 已完成 | b35ae0f 及本次重启与 NAS 验收提交 | npm run check、全部 Playwright、Python unittest、重启 verify、真实 NAS 浏览器核验 | 168 项服务端、24 项界面、45 项 e2e、11 项 Python 测试通过。39 项验收全部有通过证据 |
+| T23 | 已完成 | b35ae0f、4116aee | npm run check、全部 Playwright、Python unittest、重启 verify、真实 NAS 浏览器核验 | 168 项服务端、24 项界面、45 项 e2e、11 项 Python 测试通过。39 项验收全部有通过证据 |
+| T24 | 已完成 | 本次 T24 提交 | npm run check、全部 Playwright、Python unittest、Git 差异检查 | 168 项服务端、24 项界面、48 项 e2e、12 项 Python 测试通过。共 252 项，零跳过 |
 
 ### T11 验证记录
 
@@ -174,3 +183,11 @@ node scripts/reboot-acceptance.mjs verify
 2026-11-07 20:22（北京时间）实际重启后 verify 全部通过。Windows 启动时间由当天 14:00:40 变为 20:21:25。草稿、历史、C/A 九秒顺序、来源与输入及成果 SHA 均保留。摘要保存于 `tests/evidence/reboot-2026-11-07.json`。
 
 2026-11-07 20:25（北京时间）从平台 NAS 入口实际打开 `http://192.168.110.72:5000/`，新标签返回 HTTP 200，标题包含 Synology NAS。摘要保存于 `tests/evidence/nas-2026-11-07.json`，完整截图保存在 `.tmp/nas-acceptance/nas-page.png`。T23 验收完成。
+
+### T24 交付验证记录
+
+2026-11-07 完成 Windows 双击启停、隐藏后台、固定数据位置、已有实例复用、端口反馈与对应操作说明。健康接口提供应用、PID、项目与数据目录，启停入口核对实际监听进程及完整入口路径。停止操作只处理通过验证的当前实例及其登记文件。
+
+`tests/e2e/launcher-acceptance.spec.ts` 的 3 项直接调用 Windows PowerShell 和 CMD，验证重复启动同一 PID、错误数据目录保护、伪装应用名的端口占用保护、草稿保存后启停重开，以及实际 CMD 入口在屏蔽外部网络请求时使用本地页面、解码视频、下载恢复完整备份和重开读取原文件。测试修正了首次空数据集的新建草稿前置步骤及 CMD 参数引用，并将实际入口文件固定为 Windows CRLF 行尾。
+
+交付版本为 0.1.0。`使用说明.md` 包含启动停止、目录、八模块、制作与示例范围、共用入口及完整备份恢复操作。`TEST_REPORT.md` 汇总最终 252 项测试、真实电脑重启与 NAS 证据。最终运行日志保存在 `.tmp/final-check.log`、`.tmp/final-browser-tests.log`、`.tmp/final-document-tests.log`。

@@ -1,41 +1,30 @@
-param([int]$Port = 4173)
-$ErrorActionPreference = "SilentlyContinue"
+param([int]$Port = 4173, [string]$DataDir = '')
+$ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot 'local-instance.ps1')
+$DataDir = Resolve-WorkbenchDataDir $root $DataDir
+$logs = Join-Path $DataDir 'logs'
+$instance = Get-WorkbenchInstance $Port $root $DataDir
 
-$candidates = @()
-$pidFiles = Get-ChildItem -Path $root -Filter "server.pid" -Recurse -ErrorAction SilentlyContinue
-foreach ($file in $pidFiles) {
-  $value = (Get-Content -LiteralPath $file.FullName -Raw).Trim()
-  if ($value -match '^\d+$') { $candidates += [int]$value }
+if ($instance.Status -eq 'other_app') {
+  Write-Output 'PORT_BUSY_OTHER_APP'
+  exit 2
 }
-
-$stopped = @()
-foreach ($processId in $candidates | Select-Object -Unique) {
-  $process = Get-CimInstance Win32_Process -Filter "ProcessId=$processId"
-  if ($process -and $process.CommandLine -like "*server*index.js*") {
-    Stop-Process -Id $processId -Force
-    $stopped += $processId
-    Get-ChildItem -Path $root -Filter "server.pid" -Recurse -ErrorAction SilentlyContinue |
-      Remove-Item -Force -ErrorAction SilentlyContinue
+if ($instance.Status -eq 'running') {
+  $ownerProcess = Get-CimInstance Win32_Process -Filter "ProcessId=$($instance.Process.ProcessId)"
+  if (-not $ownerProcess -or $ownerProcess.CreationDate -ne $instance.Process.CreationDate) {
+    Write-Output 'PROCESS_CHANGED'
+    exit 2
   }
-}
-
-if ($stopped.Count -gt 0) {
-  Write-Output ("STOPPED " + ($stopped -join ","))
+  Stop-Process -Id $ownerProcess.ProcessId -Force
+  Wait-Process -Id $ownerProcess.ProcessId -Timeout 5 -ErrorAction SilentlyContinue
+  Remove-Item -LiteralPath (Join-Path $logs 'server.pid') -Force -ErrorAction SilentlyContinue
+  Remove-Item -LiteralPath (Join-Path $logs 'server.instance.json') -Force -ErrorAction SilentlyContinue
+  Write-Output "STOPPED $($ownerProcess.ProcessId)"
   exit 0
 }
 
-$listening = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
-if ($listening) {
-  $owner = Get-CimInstance Win32_Process -Filter "ProcessId=$($listening[0].OwningProcess)"
-  if ($owner -and $owner.CommandLine -like "*server*index.js*") {
-    Stop-Process -Id $owner.ProcessId -Force
-    Write-Output "STOPPED $($owner.ProcessId)"
-    exit 0
-  }
-  Write-Output "PORT_BUSY_OTHER_APP"
-  exit 2
-}
-
+Remove-Item -LiteralPath (Join-Path $logs 'server.pid') -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath (Join-Path $logs 'server.instance.json') -Force -ErrorAction SilentlyContinue
 Write-Output "NOT_RUNNING"
 exit 0

@@ -152,6 +152,21 @@ class FixtureTests(unittest.TestCase):
             self.assertRegex(evidence["verifiedAt"], r"^2026-11-07T")
             self.assertIn("node scripts/", evidence["verificationCommand"])
 
+    def test_delivery_documents_match_runtime_and_entry_points(self):
+        guide = (ROOT / "使用说明.md").read_text(encoding="utf-8")
+        report = (ROOT / "TEST_REPORT.md").read_text(encoding="utf-8")
+        package = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
+        self.assertIn(package["version"], guide)
+        self.assertIn(package["version"], report)
+        for entry in ("启动平台.cmd", "停止平台.cmd", "scripts/start-local.ps1", "scripts/stop-local.ps1"):
+            self.assertTrue((ROOT / entry).is_file())
+        for operation in ("导出完整备份", "上传备份并校验", "确认替换当前数据集", "补充缺失示例"):
+            self.assertIn(operation, guide)
+        for location in ("active.json", "database.sqlite", "server.err.log", "127.0.0.1:4173"):
+            self.assertIn(location, guide)
+        for test_path in re.findall(r"`(tests/[^`]+\.(?:ts|tsx|json))`", report):
+            self.assertTrue((ROOT / test_path).is_file(), test_path)
+
 
 if __name__ == "__main__":
     unittest.main()

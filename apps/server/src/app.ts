@@ -87,9 +87,13 @@ export async function buildApp({ config, version }: AppDeps): Promise<FastifyIns
     }
   });
 
-  app.get("/api/system/health", async (): Promise<{ ok: true; version: string }> => ({
+  app.get("/api/system/health", async () => ({
     ok: true,
     version: version ?? APP_VERSION,
+    app: "AI Creative Workbench",
+    pid: process.pid,
+    projectRoot: config.projectRoot,
+    dataDir: config.dataDir,
   }));
 
   app.get("/api/system/info", async (): Promise<SystemInfo> => {

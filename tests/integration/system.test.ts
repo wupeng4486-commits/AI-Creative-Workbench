@@ -27,6 +27,7 @@ describe("system routes (T02)", () => {
     const health = await app.inject({ url: "/api/system/health" });
     expect(health.statusCode).toBe(200);
     expect(health.json()).toMatchObject({ ok: true });
+    expect(health.json()).toMatchObject({ app: "AI Creative Workbench", pid: process.pid, projectRoot: config.projectRoot, dataDir: config.dataDir });
 
     const info = await app.inject({ url: "/api/system/info" });
     expect(info.statusCode).toBe(200);

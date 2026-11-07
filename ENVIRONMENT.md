@@ -11,7 +11,7 @@
 | Python（文档与 fixture 脚本） | 3.12.14 | 使用本机内置 UTF-8 模式 |
 | SQLite（Python 自带，参考） | 3.53.1 | 服务端使用 better-sqlite3 自带 SQLite |
 | 磁盘与写入 | 工作区可写（fixture 生成成功） | 数据目录默认 `data\`，可用 `APP_DATA_DIR` 覆盖 |
-| FFmpeg | 7.1 | T19 使用 imageio-ffmpeg 0.6.0 的临时编码工具重新生成真实 H.264 视频；通过 FFMPEG_EXE 指定路径 |
+| FFmpeg | 7.1 | T19 使用 imageio-ffmpeg 0.6.0 的临时编码工具重新生成真实 VP9/MP4 视频；通过 FFMPEG_EXE 指定路径 |
 
 ## 依赖兼容性
 
