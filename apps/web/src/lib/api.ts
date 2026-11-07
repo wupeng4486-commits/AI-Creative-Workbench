@@ -12,6 +12,7 @@ export class ApiRequestError extends Error {
   readonly fieldErrors?: Record<string, string>;
   readonly references?: unknown[];
   readonly datasetId?: string;
+  readonly currentRevision?: number;
 
   constructor(status: number, payload: Partial<ApiError>) {
     super(payload.message ?? "请求失败。");
@@ -21,8 +22,11 @@ export class ApiRequestError extends Error {
     this.fieldErrors = payload.fieldErrors;
     this.references = payload.references;
     this.datasetId = payload.datasetId;
+    this.currentRevision = payload.currentRevision;
   }
 }
+
+let currentDatasetId: string | undefined;
 
 export async function api<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const headers = new Headers(options.headers);
@@ -33,7 +37,8 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
     headers.set("content-type", "application/json");
     body = JSON.stringify(options.body);
   }
-  if (options.datasetId) headers.set("x-dataset-id", options.datasetId);
+  const datasetId = options.datasetId ?? currentDatasetId;
+  if (datasetId && options.method && !["GET", "HEAD"].includes(options.method)) headers.set("x-dataset-id", datasetId);
   if (options.idempotencyKey) headers.set("idempotency-key", options.idempotencyKey);
   const response = await fetch(path, { ...options, headers, body });
   if (!response.ok) {
@@ -46,7 +51,9 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
     throw new ApiRequestError(response.status, payload);
   }
   if (response.status === 204) return undefined as T;
-  return (await response.json()) as T;
+  const payload = await response.json() as T & { datasetId?: string };
+  if (!currentDatasetId && payload.datasetId) currentDatasetId = payload.datasetId;
+  return payload;
 }
 
 export function errorMessage(error: unknown): string {

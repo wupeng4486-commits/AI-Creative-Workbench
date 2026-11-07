@@ -24,7 +24,7 @@ export function App() {
           <Route path="/home" element={<HomePage />} />
           <Route path="/agents" element={<AgentsPage />} />
           <Route path="/agents/:id" element={<AgentDetailPage />} />
-          <Route path="/studio" element={<Navigate to="/studio/ai_video" replace />} />
+          <Route path="/studio" element={<StudioPage />} />
           <Route path="/studio/:type" element={<StudioPage />} />
           <Route path="/studio/:type/:draftId" element={<StudioPage />} />
           <Route path="/assets" element={<AssetsPage />} />

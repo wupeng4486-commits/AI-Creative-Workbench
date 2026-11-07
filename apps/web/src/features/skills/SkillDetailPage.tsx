@@ -160,6 +160,7 @@ export function SkillDetailPage() {
         description="输入要求、步骤、输出格式与示例。"
         actions={
           <>
+            <Link className="btn btn-primary" to={`/studio?skillId=${draft.id}`}>用于创作</Link>
             <Button onClick={() => copy.mutate()}>
               <Copy size={15} /> 复制为我的技能
             </Button>

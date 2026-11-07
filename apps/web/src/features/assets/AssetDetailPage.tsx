@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { PageHeader } from "../../components/PageHeader.tsx";
 import { Badge } from "../../components/Badge.tsx";
 import { MediaPreview } from "../../components/MediaPreview.tsx";
@@ -26,11 +26,11 @@ export function AssetDetailPage() {
         title="资产详情"
         description="实际类型、大小、来源与备注。"
         actions={
-          asset.downloadUrl ? (
+          <><Link className="btn btn-primary" to={`/studio?assetId=${asset.id}`}>用于创作</Link>{asset.downloadUrl ? (
             <a className="btn" href={asset.downloadUrl} download>
               下载原文件
             </a>
-          ) : undefined
+          ) : null}</>
         }
       />
       <div className="detail-grid">

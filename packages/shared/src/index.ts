@@ -45,6 +45,7 @@ export interface ApiError {
   fieldErrors?: Record<string, string>;
   datasetId?: string;
   references?: string[];
+  currentRevision?: number;
 }
 
 export interface SystemInfo {

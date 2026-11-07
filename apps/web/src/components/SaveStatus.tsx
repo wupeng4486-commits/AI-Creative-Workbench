@@ -1,6 +1,6 @@
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 
-export type SaveState = "idle" | "saving" | "saved" | "error";
+export type SaveState = "idle" | "dirty" | "saving" | "saved" | "error";
 
 export function SaveStatus({
   state,
@@ -12,6 +12,7 @@ export function SaveStatus({
   onRetry?: () => void;
 }) {
   if (state === "idle") return null;
+  if (state === "dirty") return <span className="save-status" role="status">等待自动保存…</span>;
   if (state === "saving") {
     return (
       <span className="save-status saving" role="status">

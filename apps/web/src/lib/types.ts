@@ -96,3 +96,20 @@ export interface Workflow {
   skills: Array<{ id: string; name: string }>;
   assets: AssetView[];
 }
+
+export interface Draft {
+  id: string;
+  creationType: "ai_video" | "ai_image" | "design" | "video_join";
+  name: string;
+  requirements: string;
+  parameters: Record<string, unknown>;
+  agentId: string | null;
+  productId: string | null;
+  workflowId: string | null;
+  assetIds: string[];
+  skillIds: string[];
+  clips: Array<{ assetId: string; position: number }>;
+  revision: number;
+  createdAt: string;
+  updatedAt: string;
+}

@@ -20,6 +20,8 @@ import { registerAgentRoutes } from "./routes/agents.ts";
 import { registerWorkflowRoutes } from "./routes/workflows.ts";
 import { registerRunRoutes } from "./routes/runs.ts";
 import { registerConnectorRoutes } from "./routes/connectors.ts";
+import { registerDraftRoutes } from "./routes/drafts.ts";
+import { appError } from "./http/errors.ts";
 
 export interface AppDeps {
   config: AppConfig;
@@ -38,6 +40,12 @@ export async function buildApp({ config, version }: AppDeps): Promise<FastifyIns
     ctx.close();
   });
   installErrorHandler(app, () => ctx.datasetId);
+  app.addHook("preHandler", async (request) => {
+    if (["GET", "HEAD"].includes(request.method)) return;
+    await ctx.barrier.wait();
+    const datasetId = request.headers["x-dataset-id"];
+    if (datasetId && datasetId !== ctx.datasetId) throw appError("DATASET_CHANGED", "本机数据集已经切换，请重新加载后继续。", { datasetId: ctx.datasetId });
+  });
   await app.register(multipart, {
     limits: { fileSize: 8 * 1024 * 1024 * 1024, files: 1 },
   });
@@ -137,6 +145,7 @@ export async function buildApp({ config, version }: AppDeps): Promise<FastifyIns
   await registerWorkflowRoutes(app, ctx);
   const runner = await registerRunRoutes(app, ctx);
   await registerConnectorRoutes(app, ctx, runner);
+  await registerDraftRoutes(app, ctx);
 
   app.setNotFoundHandler(async (request, reply) => {
     if (request.url.startsWith("/api/")) {

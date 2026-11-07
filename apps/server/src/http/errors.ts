@@ -37,6 +37,7 @@ export interface AppError extends Error {
   fieldErrors?: Record<string, string>;
   references?: unknown[];
   datasetId?: string;
+  currentRevision?: number;
 }
 
 export function appError(
@@ -61,6 +62,7 @@ export function installErrorHandler(app: FastifyInstance, datasetId: () => strin
       message: status >= 500 && code === "INTERNAL_ERROR" ? "本机服务处理失败，请重试。" : typed.message,
       ...(typed.fieldErrors ? { fieldErrors: typed.fieldErrors } : {}),
       ...(typed.references ? { references: typed.references } : {}),
+      ...(typed.currentRevision ? { currentRevision: typed.currentRevision } : {}),
       datasetId: typed.datasetId ?? datasetId(),
     });
   });

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "../../components/PageHeader.tsx";
 import { EmptyState } from "../../components/EmptyState.tsx";
@@ -76,6 +76,7 @@ export function WorkflowDetailPage() {
   return (
     <>
       <PageHeader title="工作流详情" description="用途、流程预览、输入要求与默认参数。" actions={<>
+        <Link className="btn btn-primary" to={`/studio?workflowId=${draft.id}`}>带入创作</Link>
         <Button onClick={() => copy.mutate()} disabled={copy.isPending}>复制为我的流程</Button>
         {owned && <Button variant="danger" onClick={() => setDeleting(true)}>删除</Button>}
       </>} />
