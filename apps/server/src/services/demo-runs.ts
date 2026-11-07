@@ -10,6 +10,7 @@ import { nowIso, parseJson } from "../util/time.ts";
 import { recordActivity } from "./events.ts";
 import { buildSnapshot, hydrateRun, insertRun, keepRunFile, markUnfinishedRunsInterrupted, type RunRow } from "./snapshots.ts";
 import { getWorkflow } from "./workflows.ts";
+import { getConnector } from "./connectors.ts";
 
 export const LIBTV_SAMPLES = SEED_WORKFLOWS.map((sample) => ({
   id: sample.id.replace("seed-workflow-", "libtv-"), name: sample.name, purpose: sample.purpose,
@@ -17,7 +18,7 @@ export const LIBTV_SAMPLES = SEED_WORKFLOWS.map((sample) => ({
 }));
 
 export interface DemoRunInput {
-  owner: "workflow";
+  owner: "workflow" | "connector";
   ownerId: string;
   requirements: string;
   parameters?: Record<string, unknown>;
@@ -56,6 +57,7 @@ export class DemoRunner {
   constructor(private ctx: AppContext, private stepMs = 500) {
     markUnfinishedRunsInterrupted(ctx.db);
     ctx.db.prepare("UPDATE run_items SET item_status = 'interrupted', message = '应用退出时演示未完成。' WHERE item_status IN ('queued', 'running') AND run_id IN (SELECT id FROM runs WHERE status = 'interrupted')").run();
+    ctx.db.prepare("UPDATE connectors SET simulation_status = CASE WHEN simulation_status = 'syncing' THEN 'connected' ELSE 'pending' END WHERE enabled = 1 AND simulation_status IN ('connecting', 'syncing')").run();
   }
 
   close() {
@@ -66,7 +68,16 @@ export class DemoRunner {
   start(input: DemoRunInput) {
     if (!input.requirements?.trim()) throw appError("VALIDATION_FAILED", "请填写本次演示要求。", { fieldErrors: { requirements: "演示要求不能为空。" } });
     if (!input.sampleInputs && !input.assetIds?.length) throw appError("VALIDATION_FAILED", "请选择输入素材，或明确选择使用本地测试素材。", { fieldErrors: { assetIds: "缺少输入素材。" } });
-    const workflow = input.ownerId.startsWith("libtv-")
+    const connector = input.owner === "connector" ? getConnector(this.ctx.db, input.ownerId) : null;
+    if (connector) {
+      if (!["connect", "sync"].includes(String(input.parameters?.action))) throw appError("VALIDATION_FAILED", "请选择模拟连接或模拟同步。");
+      if (!connector.enabled) throw appError("CONNECTOR_STATE", "连接器已停用，请先启用。");
+      if (!connector.demo_config.label?.trim()) throw appError("VALIDATION_FAILED", "请先保存演示配置。");
+      if (input.parameters?.action === "sync" && connector.simulation_status !== "connected") throw appError("CONNECTOR_STATE", "请先完成模拟连接，再模拟同步。");
+      const active = this.ctx.db.prepare("SELECT id FROM runs WHERE owner = 'connector' AND owner_id = ? AND status IN ('queued', 'running')").get(input.ownerId);
+      if (active) throw appError("CONNECTOR_STATE", "该连接器正在演示，请先等待或停止。");
+    }
+    const workflow = connector ? { name: connector.name, defaultParameters: {}, connector } : input.ownerId.startsWith("libtv-")
       ? LIBTV_SAMPLES.find((sample) => sample.id === input.ownerId)
       : getWorkflow(this.ctx.db, input.ownerId);
     if (!workflow) throw appError("WORKFLOW_NOT_FOUND", "LibTV 示例不存在。");
@@ -82,7 +93,8 @@ export class DemoRunner {
       inputs: { ...input, workflow, requirements: input.requirements.trim() }, parameters, assetIds: input.assetIds,
     });
     const row = this.ctx.db.transaction(() => {
-      const run = insertRun(this.ctx.db, { owner: input.owner, ownerId: input.ownerId, kind: "libtv_demo", snapshot });
+      const run = insertRun(this.ctx.db, { owner: input.owner, ownerId: input.ownerId, kind: connector ? "connector_demo" : "libtv_demo", snapshot });
+      if (connector) this.ctx.db.prepare("UPDATE connectors SET simulation_status = ? WHERE id = ?").run(parameters.action === "sync" ? "syncing" : "connecting", connector.id);
       this.ctx.db.prepare("UPDATE runs SET result = ? WHERE id = ?").run(JSON.stringify({ logs: ["已排队（本地演示）"] }), run.id);
       for (let index = 0; index < count; index += 1) {
         this.ctx.db.prepare("INSERT INTO run_items (id, run_id, label) VALUES (?, ?, ?)").run(newId(), run.id, `示例条目 ${index + 1}`);
@@ -91,7 +103,7 @@ export class DemoRunner {
         const asset = this.ctx.db.prepare("SELECT file_id FROM assets WHERE id = ?").get(assetId) as { file_id: string | null };
         if (asset.file_id) keepRunFile(this.ctx.db, run.id, asset.file_id, "input");
       }
-      recordActivity(this.ctx.db, "run", run.id, "启动 LibTV 本地演示", { name: workflow.name }, true);
+      recordActivity(this.ctx.db, "run", run.id, connector ? "启动连接器本地演示" : "启动 LibTV 本地演示", { name: workflow.name }, true);
       return run;
     })();
     this.schedule(row.id, this.ctx.datasetId);
@@ -106,6 +118,8 @@ export class DemoRunner {
         throw appError("RUN_STATE", "演示已经结束，无法停止。");
       }
       this.ctx.db.prepare("UPDATE run_items SET item_status = 'stopped' WHERE run_id = ? AND item_status IN ('queued', 'running')").run(id);
+      const run = getDemoRun(this.ctx, id);
+      if (run.owner === "connector") this.ctx.db.prepare("UPDATE connectors SET simulation_status = ? WHERE id = ? AND enabled = 1").run(run.parameters.action === "sync" ? "connected" : "pending", run.ownerId);
       recordActivity(this.ctx.db, "run", id, "停止本地演示", { name: "已停止" }, true);
       return getDemoRun(this.ctx, id);
     })();
@@ -136,30 +150,38 @@ export class DemoRunner {
       const previous = parseJson<{ logs: string[] }>(row.result, { logs: [] });
       const logs = [...(previous.logs ?? []), `本地演示进度 ${progress}%`];
       if (progress < 100) {
-        this.ctx.db.prepare("UPDATE runs SET status = 'running', progress = ?, message = '正在演示（未接入 LibTV）', result = ? WHERE id = ? AND status IN ('queued', 'running')").run(progress, JSON.stringify({ logs }), id);
+        this.ctx.db.prepare("UPDATE runs SET status = 'running', progress = ?, message = '正在本地演示（未调用外部服务）', result = ? WHERE id = ? AND status IN ('queued', 'running')").run(progress, JSON.stringify({ logs }), id);
         this.ctx.db.prepare("UPDATE run_items SET item_status = 'running' WHERE run_id = ? AND item_status = 'queued'").run(id);
         this.schedule(id, datasetId);
         return;
       }
       const snapshot = parseJson<{ inputs: DemoRunInput }>(row.input_snapshot, { inputs: {} as DemoRunInput });
       this.ctx.db.transaction(() => {
-        const image = row.owner_id?.includes("repack") ?? false;
-        const file = ensureDemoFile(this.ctx, image ? "image" : "video");
-        const description = describeFile(file);
+        const parameters = parseJson<{ action?: string }>(row.parameters, {});
+        const connecting = row.owner === "connector" && parameters.action === "connect";
+        const image = row.owner === "connector" || Boolean(row.owner_id?.includes("repack"));
+        const file = connecting ? null : ensureDemoFile(this.ctx, image ? "image" : "video");
+        const description = file ? describeFile(file) : null;
         const items = this.ctx.db.prepare("SELECT id FROM run_items WHERE run_id = ? ORDER BY rowid").all(id) as Array<{ id: string }>;
         items.forEach((item, index) => {
           const failed = Boolean(snapshot.inputs.simulateFailure) && index === 0;
-          const result = failed ? {} : { fileId: file.id, contentUrl: description.contentUrl, downloadUrl: description.downloadUrl, previewKind: description.previewKind, demo: true };
-          this.ctx.db.prepare("UPDATE run_items SET item_status = ?, result = ?, message = ? WHERE id = ?").run(failed ? "failed" : "completed", JSON.stringify(result), failed ? "测试注入的演示失败，可重试。" : "示例结果，未调用真实 LibTV。", item.id);
+          const result = failed || !file || !description ? {} : { fileId: file.id, contentUrl: description.contentUrl, downloadUrl: description.downloadUrl, previewKind: description.previewKind, demo: true };
+          this.ctx.db.prepare("UPDATE run_items SET item_status = ?, result = ?, message = ? WHERE id = ?").run(failed ? "failed" : "completed", JSON.stringify(result), failed ? "测试注入的演示失败，可重试。" : "本地示例结果，未调用真实外部服务。", item.id);
         });
-        keepRunFile(this.ctx.db, id, file.id, "output");
+        if (file) keepRunFile(this.ctx.db, id, file.id, "output");
         const failed = Boolean(snapshot.inputs.simulateFailure);
-        this.ctx.db.prepare("UPDATE runs SET status = ?, progress = 100, result = ?, message = ?, finished_at = ? WHERE id = ? AND status IN ('queued', 'running')").run(failed ? "failed" : "completed", JSON.stringify({ logs, demo: true }), failed ? "部分条目演示失败，可重试。" : "本地演示完成，结果为测试素材。", nowIso(), id);
+        if (row.owner === "connector") this.ctx.db.prepare("UPDATE connectors SET simulation_status = ?, last_simulated_at = ? WHERE id = ? AND enabled = 1").run(connecting && failed ? "failed" : "connected", nowIso(), row.owner_id);
+        const message = connecting ? (failed ? "模拟连接失败，可重试。" : "模拟连接成功，未调用真实服务。") : (failed ? "部分条目演示失败，可重试。" : "本地演示完成，结果为测试素材。");
+        this.ctx.db.prepare("UPDATE runs SET status = ?, progress = 100, result = ?, message = ?, finished_at = ? WHERE id = ? AND status IN ('queued', 'running')").run(failed ? "failed" : "completed", JSON.stringify({ logs, demo: true }), message, nowIso(), id);
         recordActivity(this.ctx.db, "run", id, failed ? "本地演示失败" : "本地演示完成", { name: row.owner_id }, true);
       })();
     } catch (error) {
       this.ctx.db.prepare("UPDATE runs SET status = 'failed', message = ?, finished_at = ? WHERE id = ? AND status IN ('queued', 'running')").run(`演示失败，请重试。${error instanceof Error ? error.message : ""}`, nowIso(), id);
       this.ctx.db.prepare("UPDATE run_items SET item_status = 'failed', message = '演示失败，请重试。' WHERE run_id = ? AND item_status IN ('queued', 'running')").run(id);
+      if (row.owner === "connector") {
+        const parameters = parseJson<{ action?: string }>(row.parameters, {});
+        this.ctx.db.prepare("UPDATE connectors SET simulation_status = ?, last_simulated_at = ? WHERE id = ? AND enabled = 1").run(parameters.action === "sync" ? "connected" : "failed", nowIso(), row.owner_id);
+      }
     }
   }
 }

@@ -19,6 +19,7 @@ import { registerSkillRoutes } from "./routes/skills.ts";
 import { registerAgentRoutes } from "./routes/agents.ts";
 import { registerWorkflowRoutes } from "./routes/workflows.ts";
 import { registerRunRoutes } from "./routes/runs.ts";
+import { registerConnectorRoutes } from "./routes/connectors.ts";
 
 export interface AppDeps {
   config: AppConfig;
@@ -134,7 +135,8 @@ export async function buildApp({ config, version }: AppDeps): Promise<FastifyIns
   await registerSkillRoutes(app, ctx);
   await registerAgentRoutes(app, ctx);
   await registerWorkflowRoutes(app, ctx);
-  await registerRunRoutes(app, ctx);
+  const runner = await registerRunRoutes(app, ctx);
+  await registerConnectorRoutes(app, ctx, runner);
 
   app.setNotFoundHandler(async (request, reply) => {
     if (request.url.startsWith("/api/")) {

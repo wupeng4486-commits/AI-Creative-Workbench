@@ -1,0 +1,34 @@
+import { expect, test } from "@playwright/test";
+
+test("连接器配置、模拟连接同步与显式幂等导入 (CON-01、CON-02)", async ({ page }) => {
+  await page.goto("/connectors");
+  const card = page.getByRole("article", { name: "Shopify 演示连接", exact: true });
+  await expect(card).toContainText("未配置");
+  await card.getByRole("button", { name: "演示配置", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "演示配置", exact: true });
+  await dialog.getByLabel("演示配置名称", { exact: true }).fill("T15 本地店铺");
+  await dialog.getByLabel("接口位置", { exact: true }).fill("https://example.com");
+  await dialog.getByLabel("用途说明", { exact: true }).fill("只检查本地示例");
+  await dialog.getByRole("button", { name: "保存配置" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(card).toContainText("待模拟连接");
+  await card.getByRole("button", { name: "模拟连接", exact: true }).click();
+  await expect(card).toContainText("模拟连接成功");
+  const before = (await (await page.request.get("/api/system/info")).json()).counts.assets;
+  await card.getByRole("button", { name: "模拟同步", exact: true }).click();
+  const run = page.getByRole("article", { name: /^模拟记录 / }).first();
+  await expect(run.getByRole("heading", { level: 3 })).toHaveText("模拟完成 · 模拟同步");
+  expect((await (await page.request.get("/api/system/info")).json()).counts.assets).toBe(before);
+  await run.getByRole("button", { name: "将示例导入资产库", exact: true }).click();
+  await expect(page.getByRole("status")).toHaveText("本次导入 3 项示例，已有 0 项无需重复导入。");
+  await run.getByRole("button", { name: "将示例导入资产库", exact: true }).click();
+  await expect(page.getByRole("status")).toHaveText("本次导入 0 项示例，已有 3 项无需重复导入。");
+  expect((await (await page.request.get("/api/system/info")).json()).counts.assets).toBe(before + 3);
+  await card.getByRole("button", { name: "停用", exact: true }).click();
+  await expect(card).toContainText("已停用");
+  await expect(card.getByRole("button", { name: "模拟同步", exact: true })).toBeDisabled();
+  await page.reload();
+  await expect(card).toContainText("已停用");
+  await page.goto("/assets?search=" + encodeURIComponent("示例 · Shopify"));
+  await expect(page.getByText("示例成果", { exact: true })).toHaveCount(3);
+});

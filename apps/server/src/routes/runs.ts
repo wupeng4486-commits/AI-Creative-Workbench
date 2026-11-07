@@ -22,11 +22,12 @@ export async function registerRunRoutes(app: FastifyInstance, ctx: AppContext) {
   app.get("/api/runs/:id", async (request) => getDemoRun(ctx, (request.params as { id: string }).id));
   app.post<{ Body: DemoRunInput }>("/api/runs", { schema: { body: {
     type: "object", required: ["owner", "ownerId", "requirements"], properties: {
-      owner: { type: "string", enum: ["workflow"] }, ownerId: { type: "string" }, requirements: { type: "string" },
+      owner: { type: "string", enum: ["workflow", "connector"] }, ownerId: { type: "string" }, requirements: { type: "string" },
       parameters: { type: "object", additionalProperties: true }, assetIds: { type: "array", items: { type: "string" }, uniqueItems: true },
       sampleInputs: { type: "boolean" }, simulateFailure: { type: "boolean" },
     },
   } } }, async (request, reply) => reply.code(201).send(runner.start(request.body)));
   app.post("/api/runs/:id/stop", async (request) => runner.stop((request.params as { id: string }).id));
   app.post("/api/runs/:id/retry", async (request, reply) => reply.code(201).send(runner.retry((request.params as { id: string }).id)));
+  return runner;
 }
