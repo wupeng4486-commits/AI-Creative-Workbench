@@ -1,22 +1,44 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { Navigate, Route, Routes } from "react-router-dom";
+import { AppShell } from "./shell.tsx";
+import { HomePage } from "../features/home/HomePage.tsx";
+import { AgentsPage } from "../features/agents/AgentsPage.tsx";
+import { AgentDetailPage } from "../features/agents/AgentDetailPage.tsx";
+import { StudioPage } from "../features/studio/StudioPage.tsx";
+import { AssetsPage } from "../features/assets/AssetsPage.tsx";
+import { AssetDetailPage } from "../features/assets/AssetDetailPage.tsx";
+import { CollectionPage } from "../features/assets/CollectionPage.tsx";
+import { ConnectorsPage } from "../features/connectors/ConnectorsPage.tsx";
+import { SkillsPage } from "../features/skills/SkillsPage.tsx";
+import { SkillDetailPage } from "../features/skills/SkillDetailPage.tsx";
+import { WorkflowsPage } from "../features/workflows/WorkflowsPage.tsx";
+import { WorkflowDetailPage } from "../features/workflows/WorkflowDetailPage.tsx";
+import { SettingsPage } from "../features/settings/SettingsPage.tsx";
 
 export function App() {
-  const [info, setInfo] = useState<{ version: string; dataDir: string } | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch("/api/system/info")
-      .then((response) => (response.ok ? response.json() : Promise.reject(response.status)))
-      .then(setInfo)
-      .catch(() => setError("本机服务未响应"));
-  }, []);
-
   return (
-    <main style={{ padding: 48, fontFamily: "system-ui, sans-serif" }}>
-      <h1>企业 AI 内容生产平台</h1>
-      <p>本机演示工作台正在初始化。</p>
-      {info && <p>服务版本 {info.version}（未启用前端壳）</p>}
-      {error && <p role="alert">{error}</p>}
-    </main>
+    <>
+      <Routes>
+        <Route element={<AppShell />}>
+          <Route index element={<Navigate to="/home" replace />} />
+          <Route path="/home" element={<HomePage />} />
+          <Route path="/agents" element={<AgentsPage />} />
+          <Route path="/agents/:id" element={<AgentDetailPage />} />
+          <Route path="/studio" element={<Navigate to="/studio/ai_video" replace />} />
+          <Route path="/studio/:type" element={<StudioPage />} />
+          <Route path="/studio/:type/:draftId" element={<StudioPage />} />
+          <Route path="/assets" element={<AssetsPage />} />
+          <Route path="/assets/collections/:id" element={<CollectionPage />} />
+          <Route path="/assets/:id" element={<AssetDetailPage />} />
+          <Route path="/connectors" element={<ConnectorsPage />} />
+          <Route path="/skills" element={<SkillsPage />} />
+          <Route path="/skills/:id" element={<SkillDetailPage />} />
+          <Route path="/workflows" element={<WorkflowsPage />} />
+          <Route path="/workflows/:id" element={<WorkflowDetailPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="*" element={<Navigate to="/home" replace />} />
+        </Route>
+      </Routes>
+    </>
   );
 }
