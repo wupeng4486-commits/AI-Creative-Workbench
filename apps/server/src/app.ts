@@ -1,9 +1,12 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import Fastify, { type FastifyInstance } from "fastify";
 import fastifyStatic from "@fastify/static";
 import { APP_VERSION, type SystemInfo } from "@workbench/shared";
 import type { AppConfig } from "./config.ts";
+import { createContext } from "./context.ts";
+import { getIntegrations, getPreferences } from "./services/settings.ts";
 
 export interface AppDeps {
   config: AppConfig;
@@ -13,9 +16,13 @@ export interface AppDeps {
 const ALLOWED_HOSTS = new Set(["127.0.0.1", "localhost"]);
 
 export async function buildApp({ config, version }: AppDeps): Promise<FastifyInstance> {
+  const ctx = createContext(config);
   const app = Fastify({
     logger: process.env.NODE_ENV === "test" ? false : { level: "warn" },
     bodyLimit: 1024 * 1024 * 2,
+  });
+  app.addHook("onClose", async () => {
+    ctx.close();
   });
 
   app.addHook("onRequest", async (request, reply) => {
@@ -45,23 +52,62 @@ export async function buildApp({ config, version }: AppDeps): Promise<FastifyIns
   app.get("/api/system/info", async (): Promise<SystemInfo> => {
     fs.mkdirSync(config.dataDir, { recursive: true });
     let freeBytes: number | null = null;
+    let totalBytes: number | null = null;
     try {
       const stats = fs.statfsSync(config.dataDir);
       freeBytes = stats.bavail * stats.bsize;
+      totalBytes = stats.blocks * stats.bsize;
     } catch {
       freeBytes = null;
+      totalBytes = null;
     }
+    const count = (table: string, where = "") => {
+      const row = ctx.db.prepare(`SELECT COUNT(*) AS c FROM ${table} ${where}`).get() as {
+        c: number;
+      };
+      return row.c;
+    };
+    const backups = fs.existsSync(path.join(config.dataDir, "backups"))
+      ? fs
+          .readdirSync(path.join(config.dataDir, "backups"))
+          .filter((name) => name.endsWith(".zip"))
+          .sort()
+          .at(-1)
+      : undefined;
     return {
       app: "AI Creative Workbench",
       version: version ?? APP_VERSION,
       dataDir: config.dataDir,
-      datasetId: "boot",
+      datasetId: ctx.datasetId,
       healthy: true,
-      counts: {},
-      disk: { freeBytes, totalBytes: null },
-      lastBackup: null,
+      counts: {
+        agents: count("agents"),
+        skills: count("skills"),
+        products: count("products"),
+        files: count("files"),
+        assets: count("assets"),
+        workflows: count("team_workflows"),
+        drafts: count("drafts"),
+        runs: count("runs"),
+        connectors: count("connectors"),
+        collections: count("case_collections"),
+      },
+      disk: { freeBytes, totalBytes },
+      lastBackup: backups
+        ? {
+            id: backups,
+            createdAt: fs.statSync(path.join(config.dataDir, "backups", backups)).mtime.toISOString(),
+            size: fs.statSync(path.join(config.dataDir, "backups", backups)).size,
+          }
+        : null,
     };
   });
+
+  app.get("/api/system/settings", async () => ({
+    datasetId: ctx.datasetId,
+    integrations: getIntegrations(ctx.db),
+    preferences: getPreferences(ctx.db),
+  }));
 
   app.setNotFoundHandler(async (request, reply) => {
     if (request.url.startsWith("/api/")) {
