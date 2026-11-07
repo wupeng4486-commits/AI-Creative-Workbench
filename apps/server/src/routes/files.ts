@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { FastifyInstance } from "fastify";
-import multipart from "@fastify/multipart";
 import type { AppContext } from "../context.ts";
 import {
   absoluteFilePath,
@@ -14,8 +13,6 @@ import {
   stageUpload,
 } from "../storage/files.ts";
 
-const MAX_UPLOAD_BYTES = 512 * 1024 * 1024;
-
 function decodeName(name: string): string {
   if (!/[\u0080-\u00ff]/.test(name) || /[^\u0000-\u00ff]/.test(name)) return name;
   const decoded = Buffer.from(name, "latin1").toString("utf8");
@@ -26,8 +23,6 @@ export async function registerFileRoutes(
   app: FastifyInstance,
   ctx: AppContext,
 ): Promise<void> {
-  await app.register(multipart, { limits: { fileSize: MAX_UPLOAD_BYTES, files: 1 } });
-
   app.post("/api/files/upload", async (request, reply) => {
     const part = await request.file();
     if (!part) {

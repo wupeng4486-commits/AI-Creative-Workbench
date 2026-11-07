@@ -22,6 +22,18 @@ export function cleanupDirs(): void {
   for (const dir of dirs.splice(0)) {
     // Windows can keep a handle for a few milliseconds after a streamed
     // response closes; retry instead of failing teardown.
-    fs.rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+    try {
+      fs.rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+    } catch (error) {
+      for (let attempt = 0; attempt < 25; attempt += 1) {
+        try {
+          fs.rmSync(dir, { recursive: true, force: true, maxRetries: 2, retryDelay: 100 });
+          break;
+        } catch {
+          Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 200);
+          if (attempt === 24) throw error;
+        }
+      }
+    }
   }
 }

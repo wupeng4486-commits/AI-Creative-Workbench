@@ -13,6 +13,7 @@ export const MIGRATIONS: Migration[] = [
   { id: "001-initial", file: "001-initial.sql" },
   { id: "002-idempotency", file: "002-idempotency.sql" },
   { id: "003-backups", file: "003-backups.sql" },
+  { id: "004-restores", file: "004-restores.sql" },
 ];
 
 export function migrationsDir(): string {

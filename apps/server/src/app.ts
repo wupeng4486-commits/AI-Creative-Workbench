@@ -3,12 +3,15 @@ import os from "node:os";
 import path from "node:path";
 import Fastify, { type FastifyInstance } from "fastify";
 import fastifyStatic from "@fastify/static";
+import multipart from "@fastify/multipart";
 import { APP_VERSION, type SystemInfo } from "@workbench/shared";
 import type { AppConfig } from "./config.ts";
 import { createContext } from "./context.ts";
 import { getIntegrations, getPreferences } from "./services/settings.ts";
 import { registerFileRoutes } from "./routes/files.ts";
 import { registerBackupRoutes } from "./routes/backups.ts";
+import { registerRestoreRoutes } from "./routes/restores.ts";
+import { installErrorHandler } from "./http/errors.ts";
 
 export interface AppDeps {
   config: AppConfig;
@@ -25,6 +28,10 @@ export async function buildApp({ config, version }: AppDeps): Promise<FastifyIns
   });
   app.addHook("onClose", async () => {
     ctx.close();
+  });
+  installErrorHandler(app, () => ctx.datasetId);
+  await app.register(multipart, {
+    limits: { fileSize: 8 * 1024 * 1024 * 1024, files: 1 },
   });
 
   app.addHook("onRequest", async (request, reply) => {
@@ -113,6 +120,7 @@ export async function buildApp({ config, version }: AppDeps): Promise<FastifyIns
 
   await registerFileRoutes(app, ctx);
   await registerBackupRoutes(app, ctx);
+  await registerRestoreRoutes(app, ctx);
 
   app.setNotFoundHandler(async (request, reply) => {
     if (request.url.startsWith("/api/")) {
