@@ -1,0 +1,34 @@
+{
+  "files": [
+    {
+      "name": "测试产品图.png",
+      "bytes": 502,
+      "sha256": "5e102ae546fa4552a9e317b17c77fcc34a95bcc10c4f563617704e01622c91c5"
+    },
+    {
+      "name": "测试视频A-4秒.mp4",
+      "bytes": 762,
+      "sha256": "2b3fcbabb0310acdef35c789d89d0e553dd9c3345d06aade786e2b5a5fb70e95"
+    },
+    {
+      "name": "测试视频B-6秒.mp4",
+      "bytes": 762,
+      "sha256": "5428f54d0dab744b84d842c9a8ae9a50d3e956c764fe7921202dfc02cf76de51"
+    },
+    {
+      "name": "测试视频C-5秒.mp4",
+      "bytes": 762,
+      "sha256": "1d5817f19a3018075151f5b230afbc6d087319bf3c56db88537f43aed823c237"
+    },
+    {
+      "name": "测试说明文档.pdf",
+      "bytes": 630,
+      "sha256": "8c8f0bbbcf1d1a043efba304ac10254dfbc229a74417437c72e4ea6e0cba1547"
+    },
+    {
+      "name": "测试附件.txt",
+      "bytes": 138,
+      "sha256": "c33c59138ab068db104366b2de93fd414012df283ffcb4d131790f215cdf1eb2"
+    }
+  ]
+}
