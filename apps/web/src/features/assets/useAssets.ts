@@ -8,6 +8,7 @@ export interface AssetFilters {
   origin: string;
   tag: string;
   catalog: string;
+  filesOnly?: string;
 }
 
 export interface AssetsResponse {
@@ -23,6 +24,7 @@ export function useAssets(filters: AssetFilters) {
   if (filters.origin) params.set("origin", filters.origin);
   if (filters.tag) params.set("tag", filters.tag);
   if (filters.catalog) params.set("catalog", filters.catalog);
+  if (filters.filesOnly) params.set("filesOnly", filters.filesOnly);
   const query = params.toString();
   return useQuery({
     queryKey: ["assets", query],

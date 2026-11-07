@@ -55,6 +55,8 @@ export function AssetDetailPage() {
             <dd>{asset.origin === "shared" ? "与我共享的" : "我创建的"}</dd>
             <dt>出处</dt>
             <dd>{asset.provenance}</dd>
+            <dt>备注</dt>
+            <dd>{asset.notes || "—"}</dd>
             <dt>校验值</dt>
             <dd>
               <code>{asset.file?.sha256.slice(0, 16)}…</code>

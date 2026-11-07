@@ -53,6 +53,8 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
   if (response.status === 204) return undefined as T;
   const payload = await response.json() as T & { datasetId?: string };
   if (!currentDatasetId && payload.datasetId) currentDatasetId = payload.datasetId;
+  if (options.method && !["GET", "HEAD"].includes(options.method)) window.dispatchEvent(new Event("workbench-data-changed"));
+  if (!options.method && /^\/api\/(assets|agents|skills|workflows|drafts)\/[^/?]+$/.test(path)) window.dispatchEvent(new Event("workbench-recent-changed"));
   return payload;
 }
 

@@ -3,7 +3,7 @@ import type { AppContext } from "../context.ts";
 import { rememberSeedDeletion } from "../db/seed.ts";
 import { appError } from "../http/errors.ts";
 import { copyWorkflow, createWorkflow, getWorkflow, listWorkflows, updateWorkflow, type WorkflowInput } from "../services/workflows.ts";
-import { recordActivity } from "../services/events.ts";
+import { recordActivity, recordRecent } from "../services/events.ts";
 import { assertNotReferenced, workflowReferences } from "../services/references.ts";
 
 const bodySchema = {
@@ -23,8 +23,10 @@ export async function registerWorkflowRoutes(app: FastifyInstance, ctx: AppConte
   }));
   app.get("/api/workflows/:id", async (request) => {
     const { id } = request.params as { id: string };
+    const workflow = getWorkflow(ctx.db, id);
+    recordRecent(ctx.db, "workflow", id, { name: workflow.name });
     return {
-      datasetId: ctx.datasetId, workflow: getWorkflow(ctx.db, id),
+      datasetId: ctx.datasetId, workflow,
       skills: ctx.db.prepare("SELECT id, name FROM skills ORDER BY name").all(),
       assets: ctx.db.prepare("SELECT a.id, a.name, a.file_id, f.mime_type FROM assets a LEFT JOIN files f ON f.id = a.file_id ORDER BY a.name").all(),
     };

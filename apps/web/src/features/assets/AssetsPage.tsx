@@ -39,7 +39,7 @@ export function AssetsPage() {
   const [type, setType] = useState(params.get("type") ?? "");
   const [origin, setOrigin] = useState<SourceValue>((params.get("origin") as SourceValue) ?? "all");
   const [tag, setTag] = useState(params.get("tag") ?? "");
-  const [importOpen, setImportOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(params.get("import") === "1");
   const [productOpen, setProductOpen] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -54,6 +54,7 @@ export function AssetsPage() {
     origin: origin === "all" ? "" : origin,
     tag,
     catalog: "",
+    filesOnly: params.get("filesOnly") ?? "",
   });
   const { upload, update, remove } = useAssetMutations();
   const items = assets.data?.items ?? [];
@@ -65,6 +66,7 @@ export function AssetsPage() {
   const updateQuery = (next: { search?: string; type?: string; origin?: SourceValue; tag?: string }) => {
     const merged = { search, type, origin, tag, ...next };
     const query = new URLSearchParams();
+    if (params.get("filesOnly")) query.set("filesOnly", params.get("filesOnly")!);
     if (merged.search) query.set("search", merged.search);
     if (merged.type) query.set("type", merged.type);
     if (merged.origin && merged.origin !== "all") query.set("origin", merged.origin);

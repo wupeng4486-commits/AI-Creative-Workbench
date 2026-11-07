@@ -36,6 +36,25 @@ function mapAsset(row: Record<string, unknown>): AssetRow {
   return { ...(asset as unknown as AssetRow), tags: parseJson(row.tags as string, []), sourceSnapshot: parseJson(String(source_snapshot ?? "null"), null) };
 }
 
+export function filterAssets(rows: AssetRow[], query: Record<string, unknown>): AssetRow[] {
+  const search = String(query.search ?? "").trim().toLowerCase();
+  const types = String(query.type ?? "").split(",").filter(Boolean);
+  return rows.filter((row) =>
+    (!types.length || types.includes(row.asset_type)) &&
+    (!query.origin || row.origin === query.origin) &&
+    (!query.catalog || row.catalog === query.catalog) &&
+    (!query.filesOnly || (row.catalog !== "product" && row.asset_type !== "product" && Boolean(row.file_id))) &&
+    (!query.provenance || row.provenance === query.provenance) &&
+    (!query.tag || row.tags.includes(String(query.tag))) &&
+    (!search || `${row.name} ${row.notes} ${row.tags.join(" ")}`.toLowerCase().includes(search)),
+  );
+}
+
+export function listAssets(db: Database.Database, query: Record<string, unknown> = {}): AssetView[] {
+  const rows = db.prepare("SELECT * FROM assets ORDER BY updated_at DESC, id").all() as Record<string, unknown>[];
+  return filterAssets(rows.map(mapAsset), query).map((row) => hydrateAsset(db, row));
+}
+
 export function hydrateAsset(db: Database.Database, asset: AssetRow): AssetView {
   const file = asset.file_id ? getFile(db, asset.file_id) ?? null : null;
   const kind = file ? previewKind(file.mime_type) : "none";

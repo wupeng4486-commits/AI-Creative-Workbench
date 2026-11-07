@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import type { AppContext } from "../context.ts";
 import { appError } from "../http/errors.ts";
 import { rememberSeedDeletion } from "../db/seed.ts";
-import { recordActivity } from "../services/events.ts";
+import { recordActivity, recordRecent } from "../services/events.ts";
 import {
   copySkill,
   createSkill,
@@ -59,6 +59,7 @@ export async function registerSkillRoutes(
     const { id } = request.params as { id: string };
     const skill = getSkill(ctx.db, id);
     if (!skill) throw appError("SKILL_NOT_FOUND", "技能不存在。");
+    recordRecent(ctx.db, "skill", id, { name: skill.name });
     const agents = ctx.db.prepare("SELECT id, name FROM agents ORDER BY name").all();
     const workflows = ctx.db
       .prepare("SELECT id, name FROM team_workflows ORDER BY name")

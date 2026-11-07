@@ -22,7 +22,7 @@ export function SkillsPage() {
   const [search, setSearch] = useState(params.get("search") ?? "");
   const [origin, setOrigin] = useState<SourceValue>((params.get("origin") as SourceValue) ?? "all");
   const [scenario, setScenario] = useState(params.get("scenario") ?? "");
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState(params.get("new") === "1");
   const [form, setForm] = useState({ name: "", scenario: "AI 视频", skillType: "platform" });
   const [error, setError] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);

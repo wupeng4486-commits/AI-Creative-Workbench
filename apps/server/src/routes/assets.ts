@@ -7,7 +7,7 @@ import {
   deleteAsset,
   findAsset,
   updateAsset,
-  hydrateAsset,
+  listAssets,
   inferAssetType,
   type AssetRow,
 } from "../services/assets.ts";
@@ -21,54 +21,15 @@ import {
 } from "../storage/files.ts";
 import { parseJson } from "../util/time.ts";
 
-function assetFilterFromQuery(query: Record<string, unknown>) {
-  const types = String(query.type ?? "")
-    .split(",")
-    .filter(Boolean);
-  return {
-    search: String(query.search ?? "").trim().toLowerCase(),
-    types,
-    origin: query.origin ? String(query.origin) : "",
-    tag: query.tag ? String(query.tag) : "",
-    catalog: query.catalog ? String(query.catalog) : "",
-    provenance: query.provenance ? String(query.provenance) : "",
-  };
-}
-
-/** Pure filter used by the route and by unit tests. */
-export function filterAssets(rows: AssetRow[], query: Record<string, unknown>): AssetRow[] {
-  const filter = assetFilterFromQuery(query);
-  return rows.filter((row) => {
-    if (filter.types.length > 0 && !filter.types.includes(row.asset_type)) return false;
-    if (filter.origin && row.origin !== filter.origin) return false;
-    if (filter.catalog && row.catalog !== filter.catalog) return false;
-    if (filter.provenance && row.provenance !== filter.provenance) return false;
-    if (filter.tag && !row.tags.includes(filter.tag)) return false;
-    if (
-      filter.search &&
-      !`${row.name} ${row.notes} ${row.tags.join(" ")}`.toLowerCase().includes(filter.search)
-    ) {
-      return false;
-    }
-    return true;
-  });
-}
+export { filterAssets } from "../services/assets.ts";
 
 export async function registerAssetRoutes(
   app: FastifyInstance,
   ctx: AppContext,
 ): Promise<void> {
   app.get("/api/assets", async (request) => {
-    const rows = ctx.db
-      .prepare("SELECT * FROM assets ORDER BY updated_at DESC")
-      .all() as Array<Record<string, unknown>>;
-    const mapped: AssetRow[] = rows.map((row) => ({
-      ...(row as unknown as AssetRow),
-      tags: parseJson(row.tags as string, []),
-    }));
-    const filtered = filterAssets(mapped, request.query as Record<string, unknown>).map((row) =>
-      hydrateAsset(ctx.db, row),
-    );
+    const mapped = listAssets(ctx.db);
+    const filtered = listAssets(ctx.db, request.query as Record<string, unknown>);
     const tags = Array.from(new Set(mapped.flatMap((row) => row.tags))).sort();
     return { datasetId: ctx.datasetId, items: filtered, tags };
   });
