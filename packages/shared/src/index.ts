@@ -59,6 +59,19 @@ export interface SystemInfo {
   lastBackup: { id: string; createdAt: string; size: number } | null;
 }
 
+export interface ResultSourceSnapshot {
+  runId: string;
+  resultItemId: string | null;
+  owner: string;
+  ownerId: string | null;
+  kind: string;
+  demo: boolean;
+  inputSnapshot: Record<string, unknown>;
+  parameters: Record<string, unknown>;
+  output: Record<string, unknown>;
+  createdAt: string;
+}
+
 export function formatDuration(seconds: number | null | undefined): string {
   if (seconds == null || !Number.isFinite(seconds) || seconds <= 0) return "—";
   const total = Math.round(seconds);

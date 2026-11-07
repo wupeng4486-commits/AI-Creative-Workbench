@@ -22,6 +22,7 @@ import { registerRunRoutes } from "./routes/runs.ts";
 import { registerConnectorRoutes } from "./routes/connectors.ts";
 import { registerDraftRoutes } from "./routes/drafts.ts";
 import { registerDesignDeliveryRoutes } from "./routes/design-deliveries.ts";
+import { registerResultRoutes } from "./routes/results.ts";
 import { appError } from "./http/errors.ts";
 
 export interface AppDeps {
@@ -148,6 +149,7 @@ export async function buildApp({ config, version }: AppDeps): Promise<FastifyIns
   await registerConnectorRoutes(app, ctx, runner);
   await registerDraftRoutes(app, ctx);
   await registerDesignDeliveryRoutes(app, ctx);
+  await registerResultRoutes(app, ctx);
 
   app.setNotFoundHandler(async (request, reply) => {
     if (request.url.startsWith("/api/")) {

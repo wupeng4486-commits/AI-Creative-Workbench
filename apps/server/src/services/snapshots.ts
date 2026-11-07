@@ -128,7 +128,7 @@ export function hydrateRun(row: RunRow) {
     ownerId: row.owner_id,
     kind: row.kind,
     status: row.status,
-    inputSnapshot: parseJson(row.input_snapshot, {}),
+    inputSnapshot: parseJson<Record<string, unknown>>(row.input_snapshot, {}),
     parameters: parseJson<Record<string, unknown>>(row.parameters, {}),
     demo: Boolean(row.demo),
     result: parseJson(row.result, {}),

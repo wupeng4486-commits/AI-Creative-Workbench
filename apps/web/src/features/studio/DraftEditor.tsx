@@ -13,6 +13,7 @@ import { FieldError } from "../../components/FieldError.tsx";
 import { DesignDelivery } from "./DesignDelivery.tsx";
 import { VideoJoinEditor } from "./VideoJoinEditor.tsx";
 import { JianyingButton } from "./JianyingButton.tsx";
+import { ExternalVideoImport } from "./ExternalVideoImport.tsx";
 
 export function DraftEditor({ initial, datasetId, onNew }: { initial: Draft; datasetId: string; onNew: () => Promise<unknown> }) {
   const navigate = useNavigate();
@@ -68,6 +69,7 @@ export function DraftEditor({ initial, datasetId, onNew }: { initial: Draft; dat
         <ProductionParameters draft={draft} edit={(changes) => queue.edit(changes)} errors={fieldErrors} />
         {draft.creationType === "design" && <DesignDelivery queue={queue} assets={assets.data?.items ?? []} datasetId={datasetId} errors={fieldErrors} onValidation={setFieldErrors} />}
         {draft.creationType === "video_join" && <VideoJoinEditor queue={queue} assets={assets.data?.items ?? []} datasetId={datasetId} errors={fieldErrors} />}
+        {["ai_video", "video_join"].includes(draft.creationType) && <ExternalVideoImport queue={queue} datasetId={datasetId} />}
         <p className="hint">修订 {draft.revision} · 保存在本机</p>
       </article>
       <StudioProduction queue={queue} datasetId={datasetId} onValidation={setFieldErrors} />

@@ -1,3 +1,5 @@
+import type { ResultSourceSnapshot } from "@workbench/shared";
+
 export interface AssetFile {
   id: string;
   original_name: string;
@@ -28,6 +30,7 @@ export interface AssetView {
   contentUrl: string | null;
   downloadUrl: string | null;
   thumbUrl: string | null;
+  sourceSnapshot?: ResultSourceSnapshot | null;
 }
 
 export interface NasEntry {
@@ -95,6 +98,7 @@ export interface Workflow {
   updated_at: string;
   skills: Array<{ id: string; name: string }>;
   assets: AssetView[];
+  sourceSnapshot?: ResultSourceSnapshot | null;
 }
 
 export interface Draft {

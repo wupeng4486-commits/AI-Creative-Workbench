@@ -14,6 +14,7 @@ export const MIGRATIONS: Migration[] = [
   { id: "002-idempotency", file: "002-idempotency.sql" },
   { id: "003-backups", file: "003-backups.sql" },
   { id: "004-restores", file: "004-restores.sql" },
+  { id: "005-result-sources", file: "005-result-sources.sql" },
 ];
 
 export function migrationsDir(): string {

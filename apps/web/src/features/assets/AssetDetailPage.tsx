@@ -4,7 +4,7 @@ import { Badge } from "../../components/Badge.tsx";
 import { MediaPreview } from "../../components/MediaPreview.tsx";
 import { EmptyState } from "../../components/EmptyState.tsx";
 import { errorMessage } from "../../lib/api.ts";
-import { formatBytes, formatDuration } from "@workbench/shared";
+import { CREATION_TYPE_LABELS, formatBytes, formatDuration } from "@workbench/shared";
 import { useAsset } from "./useAssets.ts";
 
 export function AssetDetailPage() {
@@ -20,6 +20,8 @@ export function AssetDetailPage() {
     );
   }
   const { asset, references } = query.data;
+  const sourceDraft = (asset.sourceSnapshot?.inputSnapshot.inputs as { draft?: { creationType?: string } } | undefined)?.draft;
+  const sourceType = sourceDraft?.creationType && sourceDraft.creationType in CREATION_TYPE_LABELS ? sourceDraft.creationType : asset.sourceSnapshot?.kind === "design_delivery" ? "design" : asset.sourceSnapshot?.kind;
   return (
     <>
       <PageHeader
@@ -75,6 +77,12 @@ export function AssetDetailPage() {
           )}
         </article>
       </div>
+      {asset.sourceSnapshot && <article className="card" aria-label="制作来源">
+        <h2>制作来源</h2><p>{asset.sourceSnapshot.demo ? "本地演示成果" : "手动导入的交付成果"}</p>
+        <p>原制作记录 {asset.sourceSnapshot.runId}</p>
+        {asset.sourceSnapshot.owner === "draft" && <Link to={`/studio/${sourceType}/${asset.sourceSnapshot.ownerId}?runId=${asset.sourceSnapshot.runId}`}>查看制作历史</Link>}
+        <details><summary>当时输入与参数</summary><pre>{JSON.stringify(asset.sourceSnapshot, null, 2)}</pre></details>
+      </article>}
     </>
   );
 }

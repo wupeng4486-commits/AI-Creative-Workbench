@@ -188,7 +188,8 @@ export class DemoRunner {
   retry(id: string) {
     const run = getDemoRun(this.ctx, id);
     if (!["failed", "stopped", "interrupted"].includes(run.status)) throw appError("RUN_STATE", "仅失败、停止或中断的演示可以重试。");
-    const snapshot = structuredClone(run.inputSnapshot) as RunSnapshot & { inputs: DemoRunInput };
+    const snapshot = structuredClone(run.inputSnapshot) as unknown as RunSnapshot & { inputs: DemoRunInput };
+    if (!snapshot.inputs || !snapshot.parameters) throw appError("RUN_STATE", "该历史记录缺少可重试输入，请从当前草稿再次演示。");
     if (run.owner === "draft") {
       snapshot.inputs.simulateFailure = false;
       return this.enqueue(snapshot.inputs, snapshot, run.kind, snapshot.inputs.requirements, id);

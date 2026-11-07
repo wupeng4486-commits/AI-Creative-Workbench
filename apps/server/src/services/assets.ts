@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type Database from "better-sqlite3";
+import type { ResultSourceSnapshot } from "@workbench/shared";
 import { newId } from "../util/id.ts";
 import { nowIso, parseJson } from "../util/time.ts";
 import { absoluteFilePath, getFile, previewKind, type FileRecord } from "../storage/files.ts";
@@ -19,6 +20,7 @@ export interface AssetRow {
   catalog: string;
   created_at: string;
   updated_at: string;
+  sourceSnapshot?: ResultSourceSnapshot | null;
 }
 
 export interface AssetView extends AssetRow {
@@ -30,7 +32,8 @@ export interface AssetView extends AssetRow {
 }
 
 function mapAsset(row: Record<string, unknown>): AssetRow {
-  return { ...(row as unknown as AssetRow), tags: parseJson(row.tags as string, []) };
+  const { source_snapshot, ...asset } = row;
+  return { ...(asset as unknown as AssetRow), tags: parseJson(row.tags as string, []), sourceSnapshot: parseJson(String(source_snapshot ?? "null"), null) };
 }
 
 export function hydrateAsset(db: Database.Database, asset: AssetRow): AssetView {
@@ -63,6 +66,7 @@ export interface CreateAssetInput {
   notes?: string;
   catalog?: string;
   id?: string;
+  sourceSnapshot?: ResultSourceSnapshot | null;
 }
 
 export function inferAssetType(mime: string | undefined, catalog: string): string {
@@ -89,8 +93,8 @@ export function createAsset(db: Database.Database, input: CreateAssetInput): Ass
   const assetType = input.assetType ?? inferAssetType(file?.mime_type, catalog);
   const create = db.transaction(() => {
     db.prepare(
-      `INSERT INTO assets (id, name, asset_type, file_id, origin, provenance, tags, notes, catalog, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO assets (id, name, asset_type, file_id, origin, provenance, tags, notes, catalog, source_snapshot, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       id,
       input.name,
@@ -101,6 +105,7 @@ export function createAsset(db: Database.Database, input: CreateAssetInput): Ass
       JSON.stringify(input.tags ?? []),
       input.notes ?? "",
       catalog,
+      JSON.stringify(input.sourceSnapshot ?? null),
       time,
       time,
     );

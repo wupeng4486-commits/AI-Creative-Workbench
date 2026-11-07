@@ -80,7 +80,7 @@ describe("dataset bootstrap and seed (T03)", () => {
     const dataDir = tempDataDir();
     const dataset = openActiveDataset(dataDir);
     expect(dataset.db.pragma("foreign_keys", { simple: true })).toBe(1);
-    expect(currentSchemaVersion(dataset.db)).toBe(4);
+    expect(currentSchemaVersion(dataset.db)).toBe(5);
     expect(() =>
       dataset.db
         .prepare(
@@ -143,7 +143,7 @@ describe("dataset bootstrap and seed (T03)", () => {
       .all() as Array<{ id: string }>;
     expect(versions.map((row) => row.id)).toContain("000-legacy");
     expect(versions.map((row) => row.id)).toContain("001-initial");
-    expect(currentSchemaVersion(dataset.db)).toBe(5);
+    expect(currentSchemaVersion(dataset.db)).toBe(6);
     dataset.db.close();
   });
 });

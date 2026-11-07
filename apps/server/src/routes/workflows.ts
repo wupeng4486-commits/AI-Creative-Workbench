@@ -7,7 +7,7 @@ import { recordActivity } from "../services/events.ts";
 import { assertNotReferenced, workflowReferences } from "../services/references.ts";
 
 const bodySchema = {
-  type: "object", properties: {
+  type: "object", additionalProperties: false, properties: {
     name: { type: "string" }, purpose: { type: "string" }, libtvRef: { type: "string" }, inputSpec: { type: "string" },
     defaultParameters: { type: "object", additionalProperties: true },
     steps: { type: "array", items: { type: "string" } }, coverFileId: { type: ["string", "null"] },

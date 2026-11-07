@@ -121,6 +121,7 @@ export function WorkflowDetailPage() {
         </article>
       </div>
       <RunPanel key={`${draft.id}-${JSON.stringify(draft.default_parameters)}`} ownerId={draft.id} parameters={draft.default_parameters} />
+      {draft.sourceSnapshot && <article className="card" aria-label="工作流来源"><h2>制作来源</h2><p>来自制作记录 {draft.sourceSnapshot.runId}</p><details><summary>原始输入与参数</summary><pre>{JSON.stringify(draft.sourceSnapshot, null, 2)}</pre></details></article>}
       <ConfirmDialog open={deleting} title="删除工作流" description="请确认删除。仍被草稿引用时，请先解除引用。" danger confirmLabel="确认删除" onCancel={() => setDeleting(false)} onConfirm={() => remove.mutate()} />
     </>
   );

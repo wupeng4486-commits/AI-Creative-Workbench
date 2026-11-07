@@ -1,16 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "../../components/Button.tsx";
 import { MediaPreview } from "../../components/MediaPreview.tsx";
 import { api, ApiRequestError, errorMessage } from "../../lib/api.ts";
 import type { DemoRun } from "../runs/RunPanel.tsx";
 import type { DraftSaveQueue } from "./DraftSaveQueue.ts";
+import { ArchiveResultButton, SaveWorkflowButton } from "./ResultActions.tsx";
 
 const STATUS: Record<string, string> = { queued: "制作已排队", running: "制作演示中", completed: "制作演示完成", failed: "制作演示失败", stopped: "制作已停止", interrupted: "制作已中断" };
 
 export function StudioProduction({ queue, datasetId, onValidation }: { queue: DraftSaveQueue; datasetId: string; onValidation: (errors: Record<string, string>) => void }) {
   const client = useQueryClient();
-  const [selectedId, setSelectedId] = useState("");
+  const [params] = useSearchParams();
+  const [selectedId, setSelectedId] = useState(params.get("runId") ?? "");
+  const loadedHistory = useRef(false);
   const [simulateFailure, setSimulateFailure] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const draftId = queue.draft.id;
@@ -19,7 +23,14 @@ export function StudioProduction({ queue, datasetId, onValidation }: { queue: Dr
     queryKey: key, queryFn: () => api<{ items: DemoRun[] }>(`/api/runs?owner=draft&ownerId=${draftId}`),
     refetchInterval: (query) => query.state.data?.items.some((run) => ["queued", "running"].includes(run.status)) ? 300 : false,
   });
-  useEffect(() => { if (history.data?.items[0]) setSelectedId(history.data.items[0].id); }, [history.data?.items[0]?.id]);
+  useEffect(() => {
+    if (!history.data?.items[0]) return;
+    if (!loadedHistory.current) {
+      loadedHistory.current = true;
+      if (params.get("runId")) return;
+    }
+    setSelectedId(history.data.items[0].id);
+  }, [history.data?.items[0]?.id]);
   const receive = (run: DemoRun) => {
     client.setQueryData<{ items: DemoRun[] }>(key, (current) => ({ items: [run, ...(current?.items.filter((item) => item.id !== run.id) ?? [])] }));
     void client.invalidateQueries({ queryKey: key });
@@ -54,8 +65,9 @@ export function StudioProduction({ queue, datasetId, onValidation }: { queue: Dr
       <option value="">选择制作记录</option>{history.data?.items.map((run) => <option key={run.id} value={run.id}>{run.startedAt} · {run.kind === "design_delivery" ? `交付版本 ${run.result.delivery?.version}` : STATUS[run.status]} · {run.id.slice(0, 8)}</option>)}
     </select></label>
     {selected ? <section aria-label="当前制作记录">
-      <h3>{selected.kind === "design_delivery" ? `交付版本 ${selected.result.delivery?.version} 已登记` : STATUS[selected.status] ?? selected.status}</h3><progress max={100} value={selected.progress} aria-label="制作进度" />
+      <h3>{selected.kind === "design_delivery" ? `交付版本 ${selected.result.delivery?.version} 已登记` : selected.kind === "external_video" ? "外部成片已导入" : STATUS[selected.status] ?? selected.status}</h3><progress max={100} value={selected.progress} aria-label="制作进度" />
       <p>{selected.message}</p>
+      {selected.items.some((item) => item.status === "completed") && <SaveWorkflowButton key={selected.id} runId={selected.id} datasetId={datasetId} initialName={`${(selected.inputSnapshot.inputs.draft as { name?: string } | undefined)?.name ?? queue.draft.name}（流程）`} />}
       {selected.result.joinPlan && <section aria-label="拼接方案">
         <h4>拼接方案（演示）</h4><ol>{selected.result.joinPlan.clips.map((clip, index) => <li key={index}>{clip.name} · {clip.duration}秒</li>)}</ol>
         <p>方案合计 {selected.result.joinPlan.totalDuration}秒</p>
@@ -68,6 +80,7 @@ export function StudioProduction({ queue, datasetId, onValidation }: { queue: Dr
         {item.result.fileId && <><p className="hint">{selected.demo ? "示例成果 · 测试媒体" : "手动导入交付文件"}</p>
           {item.result.role !== "source" && <MediaPreview kind={item.result.previewKind ?? "none"} url={item.result.contentUrl ?? null} downloadUrl={item.result.downloadUrl} name={item.label} />}
           {item.result.downloadUrl && <a href={item.result.downloadUrl} download>{item.result.role === "source" ? "下载源文件" : "下载成果"} {item.label}</a>}
+          {item.status === "completed" && <ArchiveResultButton key={item.id} runId={selected.id} itemId={item.id} datasetId={datasetId} initialName={item.label} />}
         </>}
       </section>)}
       <details><summary>输入快照与制作日志</summary><pre>{JSON.stringify(selected.inputSnapshot, null, 2)}</pre><ul>{selected.result.logs?.map((log, index) => <li key={index}>{log}</li>)}</ul></details>

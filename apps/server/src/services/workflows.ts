@@ -1,4 +1,5 @@
 import type Database from "better-sqlite3";
+import type { ResultSourceSnapshot } from "@workbench/shared";
 import { appError } from "../http/errors.ts";
 import { newId } from "../util/id.ts";
 import { nowIso, parseJson } from "../util/time.ts";
@@ -15,6 +16,7 @@ export interface WorkflowInput {
   coverFileId?: string | null;
   skillIds?: string[];
   assetIds?: string[];
+  sourceSnapshot?: ResultSourceSnapshot | null;
 }
 
 export interface WorkflowView {
@@ -32,14 +34,17 @@ export interface WorkflowView {
   updated_at: string;
   skills: Array<{ id: string; name: string }>;
   assets: AssetView[];
+  sourceSnapshot: ResultSourceSnapshot | null;
 }
 
 export function getWorkflow(db: Database.Database, id: string): WorkflowView {
   const row = db.prepare("SELECT * FROM team_workflows WHERE id = ?").get(id) as Record<string, unknown> | undefined;
   if (!row) throw appError("WORKFLOW_NOT_FOUND", "工作流不存在。");
+  const { source_snapshot, ...workflow } = row;
   const refs = db.prepare("SELECT DISTINCT asset_id FROM workflow_assets WHERE workflow_id = ?").all(id) as Array<{ asset_id: string }>;
   return {
-    ...(row as unknown as WorkflowView),
+    ...(workflow as unknown as WorkflowView),
+    sourceSnapshot: parseJson(String(source_snapshot ?? "null"), null),
     default_parameters: parseJson(String(row.default_parameters), {}),
     steps: parseJson(String(row.steps), []),
     skills: db.prepare("SELECT s.id, s.name FROM workflow_skills r JOIN skills s ON s.id = r.skill_id WHERE r.workflow_id = ?").all(id) as Array<{ id: string; name: string }>,
@@ -86,10 +91,10 @@ export function createWorkflow(db: Database.Database, input: WorkflowInput): Wor
   const id = newId();
   const time = nowIso();
   db.transaction(() => {
-    db.prepare(`INSERT INTO team_workflows (id, name, purpose, libtv_ref, input_spec, default_parameters, steps, cover_file_id, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+    db.prepare(`INSERT INTO team_workflows (id, name, purpose, libtv_ref, input_spec, default_parameters, steps, cover_file_id, source_snapshot, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
       id, input.name.trim(), input.purpose ?? "", input.libtvRef ?? "", input.inputSpec ?? "",
-      JSON.stringify(input.defaultParameters ?? {}), JSON.stringify(input.steps ?? []), input.coverFileId ?? null, time, time,
+      JSON.stringify(input.defaultParameters ?? {}), JSON.stringify(input.steps ?? []), input.coverFileId ?? null, JSON.stringify(input.sourceSnapshot ?? null), time, time,
     );
     setLinks(db, id, input);
     recordActivity(db, "workflow", id, `新建团队工作流：${input.name.trim()}`, { name: input.name.trim() });
@@ -119,5 +124,6 @@ export function copyWorkflow(db: Database.Database, id: string): WorkflowView {
     name: `${source.name}（副本）`, purpose: source.purpose, libtvRef: source.libtv_ref,
     inputSpec: source.input_spec, defaultParameters: source.default_parameters, steps: source.steps,
     coverFileId: source.cover_file_id, skillIds: source.skills.map((item) => item.id), assetIds: source.assets.map((item) => item.id),
+    sourceSnapshot: source.sourceSnapshot,
   });
 }

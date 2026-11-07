@@ -60,6 +60,7 @@
 | T17 | 已完成 | 本次 T17 提交 | npm run check、studio-production/studio-drafts e2e | 134 项服务端、21 项界面、7 项相关 e2e 通过 |
 | T18 | 已完成 | 本次 T18 提交 | npm run check、design-deliveries/studio-production/studio-drafts e2e | 140 项服务端、21 项界面、9 项相关 e2e 通过 |
 | T19 | 已完成 | 本次 T19 提交 | npm run check、全部 e2e、Python unittest | 147 项服务端、21 项界面、36 项 e2e、10 项 Python 测试通过 |
+| T20 | 已完成 | 本次 T20 提交 | npm run check、results/studio-production/design-deliveries e2e | 156 项服务端、21 项界面、5 项相关 e2e 通过 |
 
 ### T11 验证记录
 
@@ -123,3 +124,9 @@ SK-01 的智能体详情选择与完整关联联调按计划在 T12 完成，PRD
 ### 视频样例可播放性修复
 
 2026-11-07 在 T19 补充真实解码验收时，原视频的 `readyState` 始终为 0，确认原样例只有容器与元数据。已通过 FFmpeg 7.1 重新编码为测试 Chromium 支持的 VP9/MP4，并连续两次生成核对哈希稳定。`tests/e2e/media-decode.spec.ts` 的 3 项测试实际验证画面尺寸、4/6/5 秒时长、无解码错误及播放时间推进。原有哈希、时长和尺寸检查继续执行。修复提交为 `56b1805`。
+
+### T20 验证记录
+
+2026-11-07 完成成果归档、私有来源快照、准确历史跳转、另存团队流程和外部真实成片导入。归档按运行及条目幂等，成片按草稿及文件 SHA 幂等，重复操作复用原文件。来源与参数保留制作时快照。
+
+`tests/integration/results.test.ts` 的 9 项测试覆盖并发归档、历史冻结、删除后不复活、部分成功结果、流程复用、真实成片、失败事务回滚与旧数据库迁移。`tests/e2e/results.spec.ts` 的 2 项测试验证页面重复归档与导入、数量、来源跳转、流程参数及真实视频解码，另回归 3 项制作与设计交付测试。
