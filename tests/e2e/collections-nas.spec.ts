@@ -9,8 +9,16 @@ test("案例集引用资产且刷新后可恢复 (ASSET-03)", async ({ page }) =
   const dialog = page.getByRole("dialog", { name: "导入本地文件" });
   await dialog.getByLabel("文件").setInputFiles(image);
   await dialog.getByLabel("标签").fill("案例");
+  const importedResponse = page.waitForResponse((response) =>
+    response.url().endsWith("/api/assets/import") && response.request().method() === "POST",
+  );
   await dialog.getByRole("button", { name: "导入", exact: true }).click();
+  const imported = await importedResponse;
+  expect(imported.status()).toBe(201);
+  const { asset } = await imported.json();
   await expect(dialog).toBeHidden();
+  await page.getByLabel("标签筛选").selectOption("案例");
+  await expect(page.getByRole("button", { name: "测试产品图.png", exact: true })).toHaveCount(1);
   await expect(page.getByRole("button", { name: "测试产品图.png", exact: true })).toBeVisible();
 
   await page.getByRole("tab", { name: "案例集" }).click();
@@ -21,12 +29,17 @@ test("案例集引用资产且刷新后可恢复 (ASSET-03)", async ({ page }) =
   await modal.getByRole("button", { name: "创建" }).click();
   await expect(page.getByRole("link", { name: "优秀参考案例" })).toBeVisible();
   await page.getByRole("link", { name: "优秀参考案例" }).click();
-  await page.getByLabel("选择资产").selectOption({ label: "测试产品图.png" });
+  await page.getByLabel("选择资产").selectOption(asset.id);
   await page.getByRole("button", { name: "加入案例集" }).click();
   await expect(page.getByRole("cell", { name: "测试产品图.png" })).toBeVisible();
 
   await page.reload();
   await expect(page.getByRole("cell", { name: "测试产品图.png" })).toBeVisible();
+  await expect(page.getByRole("cell", { name: "案例", exact: true })).toBeVisible();
+  const collectionId = new URL(page.url()).pathname.split("/").at(-1);
+  const restored = await page.request.get(`/api/collections/${collectionId}`);
+  expect(restored.ok()).toBe(true);
+  expect((await restored.json()).items.map((item: { id: string }) => item.id)).toEqual([asset.id]);
 });
 
 test("NAS 网页与 Windows 路径入口分别可用 (NAS-01)", async ({ page }) => {

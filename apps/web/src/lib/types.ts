@@ -42,3 +42,22 @@ export interface UiPreferences {
   sidebarCollapsed: boolean;
   assetView: "list" | "grid";
 }
+
+export interface Skill {
+  id: string;
+  name: string;
+  scenario: string;
+  origin: "owned" | "shared";
+  author: string;
+  skill_type: "platform" | "libtv_reference";
+  tags: string[];
+  input_spec: string;
+  steps: string;
+  output_spec: string;
+  examples: string;
+  external_ref: string;
+  created_at: string;
+  updated_at: string;
+  agents: Array<{ id: string; name: string }>;
+  workflows: Array<{ id: string; name: string }>;
+}
