@@ -37,3 +37,8 @@ export interface NasEntry {
   address: string;
   note: string;
 }
+
+export interface UiPreferences {
+  sidebarCollapsed: boolean;
+  assetView: "list" | "grid";
+}

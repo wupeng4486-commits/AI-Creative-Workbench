@@ -15,6 +15,7 @@ export function NasPanel() {
     note: "",
   });
   const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const query = useQuery({
     queryKey: ["integrations"],
     queryFn: () =>
@@ -29,8 +30,9 @@ export function NasPanel() {
       void client.invalidateQueries({ queryKey: ["integrations"] });
       setForm({ name: "", type: "web", address: "", note: "" });
       setMessage("NAS 入口已保存。");
+      setError(null);
     },
-    onError: (error) => setMessage(errorMessage(error)),
+    onError: (mutationError) => setError(errorMessage(mutationError)),
   });
   const entries = query.data?.integrations.nas ?? [];
   return (
@@ -98,10 +100,11 @@ export function NasPanel() {
             variant="primary"
             onClick={() => {
               if (!form.name.trim() || !form.address.trim()) {
-                setMessage("名称与地址不能为空。");
+                setError("名称与地址不能为空。");
                 return;
               }
               setMessage(null);
+              setError(null);
               save.mutate();
             }}
           >
@@ -109,6 +112,7 @@ export function NasPanel() {
           </Button>
         </div>
         {message && <p role="status">{message}</p>}
+        {error && <p role="alert">{error}</p>}
         <p className="hint">复制路径或打开 NAS 不代表文件已经导入本机。</p>
       </div>
     </section>

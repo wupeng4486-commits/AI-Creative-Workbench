@@ -5,11 +5,25 @@ import { APP_NAME } from "@workbench/shared";
 import { NAV_ITEMS } from "./nav.ts";
 import { GlobalSearch } from "../features/search/GlobalSearch.tsx";
 import { usePersisted } from "../lib/persisted.ts";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "../lib/api.ts";
+import type { UiPreferences } from "../lib/types.ts";
 
 export function AppShell() {
   const [searchOpen, setSearchOpen] = useState(false);
-  const [sidebar, setSidebar] = usePersisted<boolean>("sidebarCollapsed", false);
+  const [localSidebar, setSidebar] = usePersisted<boolean>("sidebarCollapsed", false);
   const navigate = useNavigate();
+  const client = useQueryClient();
+  const prefs = useQuery({
+    queryKey: ["preferences"],
+    queryFn: () => api<{ preferences: UiPreferences }>("/api/settings"),
+  });
+  const updatePrefs = useMutation({
+    mutationFn: (preferences: UiPreferences) =>
+      api("/api/settings/preferences", { method: "PATCH", body: preferences }),
+    onSuccess: () => void client.invalidateQueries({ queryKey: ["preferences"] }),
+  });
+  const sidebar = prefs.data?.preferences?.sidebarCollapsed ?? localSidebar;
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -47,7 +61,14 @@ export function AppShell() {
           type="button"
           className="sidebar-toggle"
           aria-label={sidebar ? "展开侧栏" : "收起侧栏"}
-          onClick={() => setSidebar(!sidebar)}
+          onClick={() => {
+            const next = !sidebar;
+            setSidebar(next);
+            updatePrefs.mutate({
+              sidebarCollapsed: next,
+              assetView: prefs.data?.preferences.assetView ?? "list",
+            });
+          }}
         >
           <Menu size={16} />
         </button>

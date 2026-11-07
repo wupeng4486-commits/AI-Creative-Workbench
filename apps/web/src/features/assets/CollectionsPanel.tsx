@@ -41,7 +41,7 @@ export function CollectionsPanel() {
         <Button onClick={() => setOpen(true)}>新建案例集</Button>
       </div>
       {items.length === 0 ? (
-        <EmptyState title="还没有案例集" description="把一组参考资产归档为案例集，便于复用。" action={<Button onClick={() => setOpen(true)}>新建案例集</Button>} />
+        <EmptyState title="还没有案例集" description="把一组参考资产归档为案例集，便于复用。" action={<Button onClick={() => setOpen(true)}>新建第一个案例集</Button>} />
       ) : (
         <div className="grid-cards">
           {items.map((item) => (

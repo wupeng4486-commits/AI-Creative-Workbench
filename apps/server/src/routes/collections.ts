@@ -28,11 +28,21 @@ export async function registerCollectionRoutes(
     if (!collection) throw appError("COLLECTION_NOT_FOUND", "案例集不存在。");
     const items = ctx.db
       .prepare(
-        `SELECT a.*, i.category FROM collection_items i JOIN assets a ON a.id = i.asset_id
+        `SELECT a.*, i.category, f.mime_type, f.size, f.duration, f.original_name
+         FROM collection_items i
+         JOIN assets a ON a.id = i.asset_id
+         LEFT JOIN files f ON f.id = a.file_id
          WHERE i.collection_id = ? ORDER BY a.name`,
       )
-      .all(id);
-    return { datasetId: ctx.datasetId, collection, items };
+      .all(id) as Array<Record<string, unknown>>;
+    return {
+      datasetId: ctx.datasetId,
+      collection,
+      items: items.map((item) => ({
+        ...item,
+        tags: JSON.parse((item.tags as string) || "[]"),
+      })),
+    };
   });
 
   app.post("/api/collections", async (request, reply) => {
