@@ -31,6 +31,7 @@ const STATUS_BY_CODE: Record<string, number> = {
   BACKUP_FAILED: 409,
   DUPLICATE: 409,
   FORBIDDEN: 403,
+  DISK_FULL: 507,
 };
 
 export interface AppError extends Error {
@@ -56,6 +57,7 @@ export function appError(
 export function installErrorHandler(app: FastifyInstance, datasetId: () => string): void {
   app.setErrorHandler((error, request, reply) => {
     const typed = error as AppError & { validation?: unknown; statusCode?: number };
+    if (typed.code === "ENOSPC") { typed.code = "DISK_FULL"; typed.message = "磁盘空间不足，请释放空间后重试。"; }
     const code = typed.code && STATUS_BY_CODE[typed.code] ? typed.code : typed.validation ? "VALIDATION_FAILED" : "INTERNAL_ERROR";
     const status = typed.status ?? STATUS_BY_CODE[code] ?? 500;
     if (status >= 500) request.log.error(error);

@@ -42,19 +42,26 @@ test("案例集引用资产且刷新后可恢复 (ASSET-03)", async ({ page }) =
   expect((await restored.json()).items.map((item: { id: string }) => item.id)).toEqual([asset.id]);
 });
 
-test("NAS 网页与 Windows 路径入口分别可用 (NAS-01)", async ({ page }) => {
+test("NAS 网页与 Windows 路径入口分别可用 (NAS-01)", async ({ page, context, baseURL }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/assets");
   await page.getByRole("tab", { name: "NAS 入口" }).click();
   await page.getByLabel("NAS 名称").fill("测试 NAS");
   await page.getByLabel("地址类型").selectOption("web");
-  await page.getByLabel("NAS 地址").fill("http://127.0.0.1:4173/");
+  await page.getByLabel("NAS 地址").fill(`${baseURL}/home`);
   await page.getByRole("button", { name: "保存入口" }).click();
   await expect(page.getByText("NAS 入口已保存。")).toBeVisible();
   await expect(page.getByRole("link", { name: "打开网页" })).toHaveAttribute(
     "href",
-    "http://127.0.0.1:4173/",
+    `${baseURL}/home`,
   );
   await expect(page.getByText("网页入口")).toBeVisible();
+  const popupWait = page.waitForEvent("popup");
+  await page.getByRole("link", { name: "打开网页", exact: true }).click();
+  const popup = await popupWait;
+  await expect(popup).toHaveURL(`${baseURL}/home`);
+  await expect(popup.getByRole("heading", { level: 1 })).toHaveText("首页总览");
+  await popup.close();
 
   await page.getByLabel("NAS 名称").fill("共享盘");
   await page.getByLabel("地址类型").selectOption("windows_path");
@@ -62,6 +69,9 @@ test("NAS 网页与 Windows 路径入口分别可用 (NAS-01)", async ({ page })
   await page.getByRole("button", { name: "保存入口" }).click();
   await expect(page.getByText("Windows 路径", { exact: true }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: "复制路径" })).toBeVisible();
+  await page.getByRole("button", { name: "复制路径", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("已复制路径");
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("\\\\192.168.1.10\\团队\\素材");
 
   await page.reload();
   await page.getByRole("tab", { name: "NAS 入口" }).click();

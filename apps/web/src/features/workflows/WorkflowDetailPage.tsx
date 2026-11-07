@@ -23,11 +23,11 @@ export function WorkflowDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   useEffect(() => {
-    if (!query.data) return;
+    if (!query.data || query.data.workflow.id === draft?.id) return;
     setDraft(query.data.workflow);
     setParameters(JSON.stringify(query.data.workflow.default_parameters, null, 2));
     setSteps(query.data.workflow.steps.join("\n"));
-  }, [query.data]);
+  }, [query.data, draft?.id]);
   useEffect(() => { setState("idle"); setError(null); }, [id]);
   const invalidate = () => {
     for (const key of ["workflows", "home", "search", "skills"]) void client.invalidateQueries({ queryKey: [key] });

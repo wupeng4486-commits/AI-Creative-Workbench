@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import Database from "better-sqlite3";
 import { APP_VERSION } from "@workbench/shared";
+import { absoluteFilePath } from "../storage/files.ts";
 import {
   datasetDir,
   databasePath,
@@ -140,18 +141,23 @@ export async function prepareRestore(
     } else {
       const check = openAndCheck(databaseFile);
       problems.push(...check.problems);
-      for (const file of manifest.files) {
-        const row = (() => {
-          const db = new Database(databaseFile, { readonly: true });
-          try {
-            return db.prepare("SELECT relative_path FROM files WHERE id = ?").get(file.fileId) as
-              | { relative_path: string }
-              | undefined;
-          } finally {
-            db.close();
+      if (!check.problems.length) {
+        const db = new Database(databaseFile, { readonly: true });
+        try {
+          const rows = db.prepare("SELECT id, relative_path, size, sha256 FROM files WHERE state = 'ready'").all() as Array<{ id: string; relative_path: string; size: number; sha256: string }>;
+          const listed = new Map(manifest.files.map((file) => [file.fileId, file]));
+          if (listed.size !== manifest.files.length || listed.size !== rows.length) problems.push("数据库与清单的原文件数量不一致。");
+          for (const row of rows) {
+            const file = listed.get(row.id);
+            const zipPath = `files/${row.id}/${path.basename(row.relative_path)}`;
+            if (!file || file.relativePath !== row.relative_path || file.zipPath !== zipPath || file.size !== row.size || file.sha256 !== row.sha256) {
+              problems.push(`数据库与清单的原文件信息不一致：${row.id}`);
+              continue;
+            }
+            const absolute = absoluteFilePath(staging, row.relative_path);
+            if (!fs.existsSync(absolute) || fs.statSync(absolute).size !== row.size || sha.get(zipPath) !== row.sha256) problems.push(`原文件内容不完整：${row.id}`);
           }
-        })();
-        if (!row) problems.push(`文件记录不存在：${file.fileId}`);
+        } finally { db.close(); }
       }
     }
   } catch (error) {

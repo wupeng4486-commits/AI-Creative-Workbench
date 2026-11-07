@@ -9,7 +9,6 @@ import {
   updateAsset,
   listAssets,
   inferAssetType,
-  type AssetRow,
 } from "../services/assets.ts";
 import { recordRecent } from "../services/events.ts";
 import { assetReferences } from "../services/references.ts";

@@ -17,19 +17,21 @@ export function Modal({
   size?: "small" | "medium" | "large";
 }) {
   const dialog = useRef<HTMLDivElement>(null);
+  const close = useRef(onClose);
+  close.current = onClose;
   useEffect(() => {
     if (!open) return;
     const previous = document.activeElement as HTMLElement | null;
     dialog.current?.focus();
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") close.current();
     };
     window.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("keydown", onKey);
       previous?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
   if (!open) return null;
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={(event) => {

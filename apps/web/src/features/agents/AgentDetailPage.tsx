@@ -25,7 +25,7 @@ export function AgentDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [answer, setAnswer] = useState<number | null>(null);
-  useEffect(() => { if (query.data) setDraft(query.data.agent); }, [query.data]);
+  useEffect(() => { if (query.data) setDraft((current) => current?.id === query.data.agent.id ? current : query.data.agent); }, [query.data]);
   useEffect(() => { setTab("概览"); setState("idle"); setError(null); setAnswer(null); }, [id]);
   const invalidate = () => {
     for (const key of ["agents", "skills", "home", "search"]) void client.invalidateQueries({ queryKey: [key] });

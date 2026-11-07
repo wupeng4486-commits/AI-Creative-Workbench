@@ -50,11 +50,10 @@ export async function registerFileRoutes(
     } catch (error) {
       request.log.error(error);
       const tooLarge = (error as { code?: string }).code === "FST_REQ_FILE_TOO_LARGE";
-      return reply.code(tooLarge ? 413 : 500).send({
-        code: tooLarge ? "FILE_TOO_LARGE" : "UPLOAD_FAILED",
-        message: tooLarge
-          ? "文件超过 512 MB 上限。"
-          : "文件写入失败，未创建资产记录，请重试。",
+      const diskFull = (error as { code?: string }).code === "ENOSPC";
+      return reply.code(tooLarge ? 413 : diskFull ? 507 : 500).send({
+        code: tooLarge ? "FILE_TOO_LARGE" : diskFull ? "DISK_FULL" : "UPLOAD_FAILED",
+        message: tooLarge ? "文件超过 8 GB 上限。" : diskFull ? "磁盘空间不足，请释放空间后重试。" : "文件写入失败，未创建资产记录，请重试。",
       });
     }
   });

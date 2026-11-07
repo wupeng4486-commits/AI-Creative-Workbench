@@ -12,7 +12,7 @@ import {
   datasetHealth,
   prepareRestore,
 } from "../services/restore.ts";
-import { openActiveDataset } from "../db/datasets.ts";
+import { openActiveDataset, writeActivePointer, type OpenedDataset } from "../db/datasets.ts";
 import { seedDatabase } from "../db/seed.ts";
 import { createBackup } from "../services/backup.ts";
 import { markUnfinishedRunsInterrupted } from "../services/snapshots.ts";
@@ -60,14 +60,21 @@ export async function registerRestoreRoutes(
       ctx.datasetId,
       (datasetId) => datasetHealth(ctx.config.dataDir, datasetId),
     );
+    let next: OpenedDataset | undefined;
+    try {
+      next = openActiveDataset(ctx.config.dataDir);
+      seedDatabase(next.db);
+      markUnfinishedRunsInterrupted(next.db);
+      next.db.prepare("UPDATE run_items SET item_status = 'interrupted', message = '恢复时演示已中断。' WHERE item_status IN ('queued', 'running')").run();
+    } catch (error) {
+      next?.db.close();
+      writeActivePointer(ctx.config.dataDir, { datasetId: result.previousDatasetId, previousDatasetId: null, activatedAt: nowIso() });
+      throw appError("RESTORE_HEALTH_FAILED", `恢复数据初始化失败，已回到原数据。${(error as Error).message}`);
+    }
     ctx.close();
-    const next = openActiveDataset(ctx.config.dataDir);
-    seedDatabase(next.db);
     ctx.dataset = next;
     ctx.db = next.db;
     ctx.datasetId = next.datasetId;
-    markUnfinishedRunsInterrupted(ctx.db);
-    ctx.db.prepare("UPDATE run_items SET item_status = 'interrupted', message = '恢复时演示已中断。' WHERE item_status IN ('queued', 'running')").run();
     return reply.send({
       datasetId: ctx.datasetId,
       previousDatasetId: result.previousDatasetId,

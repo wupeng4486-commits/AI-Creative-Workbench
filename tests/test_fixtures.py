@@ -105,7 +105,18 @@ class FixtureTests(unittest.TestCase):
             if row.startswith("| ") and ACCEPTANCE_ID.fullmatch(row.split("|")[1].strip())
         ]
         self.assertEqual(len(rows), 39)
-        self.assertTrue(all("待验收" in row for row in rows))
+        for row in rows:
+            cells = [cell.strip() for cell in row.strip().strip("|").split("|")]
+            with self.subTest(criterion=cells[0]):
+                self.assertEqual(len(cells), 5)
+                self.assertIn(cells[3], {"通过", "待电脑重启", "待人工验收"})
+                self.assertRegex(cells[4], r"\d{4}-\d{2}-\d{2}")
+                evidence_paths = re.findall(r"`((?:tests|scripts)/[^`]+)`", cells[4])
+                self.assertTrue(evidence_paths, "每项验收必须关联可复核的测试或校验脚本")
+                for evidence in evidence_paths:
+                    self.assertTrue((ROOT / evidence).is_file(), evidence)
+                if cells[3] != "通过":
+                    self.assertIn("尚待", cells[4], "未完成验收必须明确剩余操作")
 
     def test_environment_record_documents_actual_versions(self):
         env = (ROOT / "ENVIRONMENT.md").read_text(encoding="utf-8")

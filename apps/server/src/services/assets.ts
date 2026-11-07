@@ -180,35 +180,32 @@ export function deleteAsset(
   }
   assertNotReferenced(assetReferences(db, id), "该资产仍被引用，请先解除引用。");
 
-  const runUses = db
-    .prepare("SELECT COUNT(*) AS c FROM run_files WHERE file_id = ?")
-    .get(asset.file_id) as { c: number };
-  const historyNeedsFile = Boolean(asset.file_id) && runUses.c > 0;
-
   const remove = db.transaction(() => {
     db.prepare("DELETE FROM collection_items WHERE asset_id = ?").run(id);
     db.prepare("DELETE FROM assets WHERE id = ?").run(id);
     recordActivity(db, "asset", id, `删除资产：${asset.name}`, { name: asset.name });
-    if (!historyNeedsFile && asset.file_id) {
-      const file = getFile(db, asset.file_id);
-      if (file) {
-        fs.rmSync(path.join(datasetDir, "files", path.dirname(file.relative_path)), {
-          recursive: true,
-          force: true,
-        });
-        fs.rmSync(path.join(datasetDir, "previews", file.id), { recursive: true, force: true });
-      }
-      const remaining = db
-        .prepare("SELECT COUNT(*) AS c FROM assets WHERE file_id = ?")
-        .get(asset.file_id) as { c: number };
-      if (remaining.c === 0) {
-        db.prepare("DELETE FROM files WHERE id = ?").run(asset.file_id);
-      }
+    if (asset.file_id) {
+      const remaining = db.prepare(`SELECT 1 FROM assets WHERE file_id = ?
+        UNION ALL SELECT 1 FROM asset_versions WHERE file_id = ?
+        UNION ALL SELECT 1 FROM run_files WHERE file_id = ?
+        UNION ALL SELECT 1 FROM team_workflows WHERE cover_file_id = ? LIMIT 1`).get(asset.file_id, asset.file_id, asset.file_id, asset.file_id);
+      if (remaining) return true;
+      db.prepare("DELETE FROM files WHERE id = ?").run(asset.file_id);
     }
-    return true;
+    return false;
   });
-  remove();
-  return { deleted: true, retainedFile: historyNeedsFile };
+  const retainedFile = remove();
+  if (!retainedFile && asset.file) {
+    const file = absoluteFilePath(datasetDir, asset.file.relative_path);
+    try {
+      fs.rmSync(file, { force: true });
+      const preview = path.resolve(datasetDir, "previews", asset.file.id);
+      if (preview.startsWith(path.resolve(datasetDir, "previews") + path.sep)) fs.rmSync(preview, { recursive: true, force: true });
+    } catch {
+      // The committed deletion remains successful. Startup isolates leftover files.
+    }
+  }
+  return { deleted: true, retainedFile };
 }
 
 export function assetAbsolutePath(

@@ -55,3 +55,19 @@ test("全局搜索按类型分组，返回保留关键词、目录筛选并显�
   await expect(page.getByRole("region", { name: "数量看板" }).getByRole("link", { name: /团队智能体/ }).locator("strong")).toHaveText(String(before.counts.agents + 1));
   await expect(page.getByRole("region", { name: "本机动态" }).getByRole("link", { name: /新建智能体：首页联动智能体/ })).toBeVisible();
 });
+
+test("新建和删除自己的智能体与技能后看板各自增加并恢复 (HOME-01)", async ({ page, request }) => {
+  await page.goto("/home");
+  const counts = (await (await request.get("/api/home")).json()).counts;
+  const agent = (await (await request.post("/api/agents", { data: { name: "T23 数量核验导演", purpose: "数量验收" } })).json()).agent;
+  const skill = (await (await request.post("/api/skills", { data: { name: "T23 数量核验技能", scenario: "数量验收" } })).json()).skill;
+  await page.reload();
+  const board = page.getByRole("region", { name: "数量看板" });
+  await expect(board.getByRole("link", { name: /团队智能体/ }).locator("strong")).toHaveText(String(counts.agents + 1));
+  await expect(board.getByRole("link", { name: /团队技能/ }).locator("strong")).toHaveText(String(counts.skills + 1));
+  expect((await request.delete(`/api/agents/${agent.id}`)).ok()).toBe(true);
+  expect((await request.delete(`/api/skills/${skill.id}`)).ok()).toBe(true);
+  await page.reload();
+  await expect(board.getByRole("link", { name: /团队智能体/ }).locator("strong")).toHaveText(String(counts.agents));
+  await expect(board.getByRole("link", { name: /团队技能/ }).locator("strong")).toHaveText(String(counts.skills));
+});

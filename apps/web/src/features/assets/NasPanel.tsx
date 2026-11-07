@@ -58,8 +58,15 @@ export function NasPanel() {
               ) : (
                 <Button
                   onClick={async () => {
-                    await navigator.clipboard?.writeText(entry.address);
-                    setMessage(`已复制路径：${entry.address}`);
+                    setMessage(null);
+                    setError(null);
+                    try {
+                      if (!navigator.clipboard) throw new Error("clipboard unavailable");
+                      await navigator.clipboard.writeText(entry.address);
+                      setMessage(`已复制路径：${entry.address}`);
+                    } catch {
+                      setError("路径复制失败，请选中完整路径手动复制。");
+                    }
                   }}
                 >
                   复制路径

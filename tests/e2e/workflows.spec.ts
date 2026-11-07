@@ -16,6 +16,9 @@ test("团队流程创建、参数和原生附件保存后可重开 (WF-01、WF-0
   await page.getByLabel("交付检查清单", { exact: true }).check();
   await page.getByLabel("导入流程附件", { exact: true }).setInputFiles(path.resolve(import.meta.dirname, "../../fixtures/demo/测试附件.txt"));
   await expect(page.getByRole("link", { name: "测试附件.txt", exact: true })).toBeVisible();
+  await expect(page.getByLabel("LibTV 流程引用", { exact: true })).toHaveValue("libtv://workflow/tietie");
+  await expect(page.getByLabel("输入说明", { exact: true })).toHaveValue("产品资料与成片");
+  await expect(page.getByLabel("流程步骤", { exact: true })).toHaveValue("检查输入\n输出交付清单");
   await page.getByRole("button", { name: "保存工作流" }).click();
   await expect(page.getByRole("status")).toHaveText("已保存到本机");
   await page.reload();

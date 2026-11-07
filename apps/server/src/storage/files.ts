@@ -99,23 +99,25 @@ export async function stageUpload(
   const handle = fs.openSync(stagingPath, "w");
   let size = 0;
   try {
-    for await (const chunk of stream) {
-      const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
-      size += buffer.length;
-      hash.update(buffer);
-      fs.writeSync(handle, buffer);
+    try {
+      for await (const chunk of stream) {
+        const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+        size += buffer.length;
+        hash.update(buffer);
+        fs.writeSync(handle, buffer);
+      }
+      fs.fsyncSync(handle);
+    } finally {
+      fs.closeSync(handle);
     }
-    fs.fsyncSync(handle);
-  } finally {
-    fs.closeSync(handle);
-  }
-  const sha256 = hash.digest("hex");
-  const actual = fs.statSync(stagingPath).size;
-  if (actual !== size) {
+    const sha256 = hash.digest("hex");
+    const actual = fs.statSync(stagingPath).size;
+    if (actual !== size) throw new Error("上传写入不完整。");
+    return { stagingPath, size, sha256 };
+  } catch (error) {
     fs.rmSync(stagingPath, { force: true });
-    throw new Error("上传写入不完整。");
+    throw error;
   }
-  return { stagingPath, size, sha256 };
 }
 
 export function commitStagedFile(

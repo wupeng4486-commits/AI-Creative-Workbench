@@ -51,6 +51,14 @@ test("同一成果只归档一次，来源冻结并可另存团队流程 (ST-05�
   await expect(page.getByLabel("默认参数", { exact: true })).toHaveValue(/T20 柔光产品图/);
   await expect(page.getByLabel("输入说明", { exact: true })).toHaveValue("T20 原始制作需求");
   expect((await (await page.request.get("/api/system/info")).json()).counts.workflows).toBe(before.workflows + 1);
+  await page.goto("/home");
+  const activity = page.getByRole("region", { name: "本机动态" }).getByRole("link", { name: "归档创作成果", exact: true });
+  await expect(activity).toHaveAttribute("href", assetHref);
+  await expect(page.getByRole("region", { name: "最近使用" }).getByRole("link", { name: "T20 已归档主图", exact: true })).toHaveAttribute("href", assetHref);
+  const recentDraft = page.getByRole("region", { name: "最近使用" }).locator(`a[href='/studio/ai_image/${draft.id}']`);
+  await expect(recentDraft).toHaveCount(1);
+  await activity.click();
+  await expect(page).toHaveURL(new RegExp(assetHref));
 });
 
 test("外部成片手动导入保持真实来源与文件，重复导入不增加记录", async ({ page }) => {

@@ -113,6 +113,11 @@ export function openActiveDataset(dataDir: string): OpenedDataset {
     throw new Error(`激活的数据集目录不存在：${pointer.datasetId}`);
   }
   const db = openDatabase(dataDir, pointer.datasetId);
-  runMigrations(db);
+  try {
+    runMigrations(db);
+  } catch (error) {
+    db.close();
+    throw error;
+  }
   return { datasetId: pointer.datasetId, db, dir };
 }

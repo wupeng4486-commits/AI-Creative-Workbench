@@ -1,49 +1,49 @@
 # PRD 验收台账
 
-本文件登记 PRD 第 10 节的 39 项验收编号。开发完成后每项填写结果、证据与日期；
-未执行前一律标为“待验收”，不预填通过。
+本文件登记 PRD 第 10 节的 39 项验收编号。每项包含实际结果、证据与日期。
+2026-11-07 已执行全部自动化验收。电脑重启与真实 NAS 可达性保留人工验收状态。
 
 | 编号 | 实现任务 | 验证任务 | 当前状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| NAV-01 | T08 | T23、T24 | 待验收 | — |
-| NAV-02 | T08、T16 | T23 | 待验收 | — |
-| NAV-03 | T21 | T23 | 待验收 | — |
-| HOME-01 | T21 | T23 | 待验收 | — |
-| HOME-02 | T21 | T23 | 待验收 | — |
-| HOME-03 | T21 | T23 | 待验收 | — |
-| HOME-04 | T21、T20 | T23 | 待验收 | — |
-| AG-01 | T12 | T23 | 待验收 | — |
-| AG-02 | T12 | T23 | 待验收 | — |
-| AG-03 | T12、T16 | T23 | 待验收 | — |
-| SK-01 | T11 | T23 | 待验收 | — |
-| REF-01 | T05 | T23 | 待验收 | — |
-| ST-01 | T16、T17、T18、T19 | T23 | 待验收 | — |
-| ST-02 | T16 | T23 | 待验收 | — |
-| ST-03 | T17 | T23 | 待验收 | — |
-| ST-04 | T14、T17 | T23 | 待验收 | — |
-| ST-05 | T20 | T23 | 待验收 | — |
-| JOIN-01 | T19 | T23 | 待验收 | — |
-| JOIN-02 | T19 | T23、T24 | 待验收 | — |
-| LINK-01 | T10、T19 | T23、T24 | 待验收 | — |
-| ASSET-01 | T04、T09 | T23 | 待验收 | — |
-| ASSET-02 | T04、T09 | T23 | 待验收 | — |
-| ASSET-03 | T09、T10、T16 | T23 | 待验收 | — |
-| NAS-01 | T10 | T23、T24 | 待验收 | — |
-| CON-01 | T15 | T23 | 待验收 | — |
-| CON-02 | T15 | T23 | 待验收 | — |
-| WF-01 | T13 | T23 | 待验收 | — |
-| WF-02 | T14 | T23 | 待验收 | — |
-| WF-03 | T13、T20 | T23 | 待验收 | — |
-| WF-04 | T14 | T23 | 待验收 | — |
-| CFG-01 | T10、T22 | T23 | 待验收 | — |
-| DATA-01 | T03、T04、T16 | T23、T24 | 待验收 | — |
-| DATA-02 | T03 | T23 | 待验收 | — |
-| BACK-01 | T06 | T23 | 待验收 | — |
-| BACK-02 | T07 | T23、T24 | 待验收 | — |
-| BACK-03 | T07、T22 | T23 | 待验收 | — |
-| BACK-04 | T07 | T23 | 待验收 | — |
-| ERR-01 | T04、T07、T14、T16 | T23 | 待验收 | — |
-| EMPTY-01 | T08、T21 | T23 | 待验收 | — |
+| NAV-01 | T08 | T23、T24 | 通过 | 2026-11-07，`tests/e2e/navigation.spec.ts`，八模块顺序、标题和导航状态 |
+| NAV-02 | T08、T16 | T23 | 通过 | 2026-11-07，`tests/e2e/navigation.spec.ts`，四创作类型与通用详情标题 |
+| NAV-03 | T21 | T23 | 通过 | 2026-11-07，`tests/e2e/discovery.spec.ts`，按原 ID 打开、返回搜索词与来源筛选 |
+| HOME-01 | T21 | T23 | 通过 | 2026-11-07，`tests/e2e/discovery.spec.ts`、`tests/integration/discovery.test.ts`，智能体技能增删与去重目录数量 |
+| HOME-02 | T21 | T23 | 通过 | 2026-11-07，`tests/integration/discovery.test.ts`，共享原文件口径、商品排除和团队流程数量 |
+| HOME-03 | T21 | T23 | 通过 | 2026-11-07，`tests/e2e/discovery.spec.ts`、`tests/e2e/navigation.spec.ts`，快捷表单、工作室和四类共享详情 |
+| HOME-04 | T21、T20 | T23 | 通过 | 2026-11-07，`tests/e2e/results.spec.ts`、`tests/e2e/discovery.spec.ts`，归档动态、最近草稿与资产、示例标识 |
+| AG-01 | T12 | T23 | 通过 | 2026-11-07，`tests/e2e/agents.spec.ts`、`tests/integration/agents.test.ts`，编辑关联、复制独立与刷新恢复 |
+| AG-02 | T12 | T23 | 通过 | 2026-11-07，`tests/e2e/agents.spec.ts`，来源筛选、共享保护和副本编辑 |
+| AG-03 | T12、T16 | T23 | 通过 | 2026-11-07，`tests/e2e/agents.spec.ts`、`tests/e2e/studio-drafts.spec.ts`，示例对话与关联带入后无自动运行 |
+| SK-01 | T11 | T23 | 通过 | 2026-11-07，`tests/e2e/skills.spec.ts`、`tests/e2e/agents.spec.ts`，完整正文、类型与连续关联 |
+| REF-01 | T05 | T23 | 通过 | 2026-11-07，`tests/integration/references.test.ts`、`tests/integration/design-deliveries.test.ts`、`tests/integration/results.test.ts`，具体引用阻止、解除后删除与历史文件保留 |
+| ST-01 | T16、T17、T18、T19 | T23 | 通过 | 2026-11-07，`tests/e2e/studio-production.spec.ts`、`tests/e2e/design-deliveries.spec.ts`、`tests/e2e/video-join.spec.ts`，四类参数、保存和预览 |
+| ST-02 | T16 | T23 | 通过 | 2026-11-07，`tests/e2e/studio-drafts.spec.ts`，带入时明确加入当前或新建 |
+| ST-03 | T17 | T23 | 通过 | 2026-11-07，`tests/e2e/studio-production.spec.ts`、`tests/integration/studio-runs.test.ts`，两次冻结输入与历史原快照重试 |
+| ST-04 | T14、T17 | T23 | 通过 | 2026-11-07，`tests/e2e/libtv.spec.ts`、`tests/e2e/studio-production.spec.ts`、`tests/integration/demo-runs.test.ts`，必填、停止和终态竞态 |
+| ST-05 | T20 | T23 | 通过 | 2026-11-07，`tests/e2e/results.spec.ts`、`tests/integration/results.test.ts`，重复并发归档、来源、有效媒体和首页动态 |
+| JOIN-01 | T19 | T23 | 通过 | 2026-11-07，`tests/e2e/video-join.spec.ts`，真实鼠标排序 C/A/B、移除 B 后 C/A 九秒 |
+| JOIN-02 | T19 | T23、T24 | 通过 | 2026-11-07，`tests/e2e/video-join.spec.ts`、`tests/e2e/restart-acceptance.spec.ts`，重开与服务重启后顺序、要求、文件和演示方案 |
+| LINK-01 | T10、T19 | T23、T24 | 通过 | 2026-11-07，`tests/e2e/video-join.spec.ts`，未配置提示、等待保存和可访问测试网页新标签 |
+| ASSET-01 | T04、T09 | T23 | 通过 | 2026-11-07，`tests/e2e/assets.spec.ts`、`tests/e2e/media-errors.spec.ts`、`tests/integration/files.test.ts`，真实图视频文档、备注、标签、下载字节 |
+| ASSET-02 | T04、T09 | T23 | 通过 | 2026-11-07，`tests/integration/assets-api.test.ts`、`tests/integration/acceptance-regressions.test.ts`、`tests/ui/shell.test.tsx`，不支持预览、下载和导入写入失败 |
+| ASSET-03 | T09、T10、T16 | T23 | 通过 | 2026-11-07，`tests/e2e/collections-nas.spec.ts`、`tests/e2e/studio-drafts.spec.ts`、`tests/integration/assets-api.test.ts`，商品知识、集合与引用带入 |
+| NAS-01 | T10 | T23、T24 | 待人工验收 | 2026-11-07，`tests/e2e/collections-nas.spec.ts` 已验证可访问测试网页新标签及完整 Windows 路径剪贴板。尚待用户真实 NAS 网页可达性，需在实际网络环境打开并核对 |
+| CON-01 | T15 | T23 | 通过 | 2026-11-07，`tests/e2e/connectors.spec.ts`、`tests/integration/connectors.test.ts`，配置、连接同步演示、日志与停用 |
+| CON-02 | T15 | T23 | 通过 | 2026-11-07，`tests/e2e/connectors.spec.ts`、`tests/integration/connectors.test.ts`，显式导入与重试幂等 |
+| WF-01 | T13 | T23 | 通过 | 2026-11-07，`tests/e2e/workflows.spec.ts`，来源、步骤预览、共享独立复制及附件上传时保留未保存输入 |
+| WF-02 | T14 | T23 | 通过 | 2026-11-07，`tests/e2e/libtv.spec.ts`、`tests/integration/demo-runs.test.ts`，四类本地示例、输入参数与演示快照 |
+| WF-03 | T13、T20 | T23 | 通过 | 2026-11-07，`tests/e2e/results.spec.ts`、`tests/e2e/libtv.spec.ts`、`tests/integration/discovery.test.ts`，另存流程、LibTV 引用和首页数量 |
+| WF-04 | T14 | T23 | 通过 | 2026-11-07，`tests/e2e/libtv.spec.ts`、`tests/integration/demo-runs.test.ts`，批量条目、有效预览、部分失败与独立重试 |
+| CFG-01 | T10、T22 | T23 | 通过 | 2026-11-07，`tests/e2e/data-settings.spec.ts`、`tests/e2e/video-join.spec.ts`、`tests/integration/data-settings.test.ts`，共用入口与偏好重开持久化 |
+| DATA-01 | T03、T04、T16 | T23、T24 | 待电脑重启 | 2026-11-07，`tests/e2e/restart-acceptance.spec.ts` 已通过实际浏览器退出、服务进程终止重启、原文件字节与恢复。`scripts/reboot-acceptance.mjs` 已准备独立数据。尚待 Windows 真正重启后 verify 核对启动时间、草稿、顺序、历史和 SHA |
+| DATA-02 | T03 | T23 | 通过 | 2026-11-07，`tests/integration/seed.test.ts`、`tests/integration/data-settings.test.ts`，幂等初始化、已改示例和删除记录保护 |
+| BACK-01 | T06 | T23 | 通过 | 2026-11-07，`tests/integration/backup.test.ts`、`tests/e2e/data-settings.spec.ts`，完整清单、数据库、原文件和实际下载 |
+| BACK-02 | T07 | T23、T24 | 通过 | 2026-11-07，`tests/e2e/restart-acceptance.spec.ts`、`tests/integration/restore.test.ts`，隔离恢复、重启、C/A 九秒与来源快照 |
+| BACK-03 | T07、T22 | T23 | 通过 | 2026-11-07，`tests/e2e/data-settings.spec.ts`、`tests/integration/restore.test.ts`，预览取消前后数据集和原数据核对 |
+| BACK-04 | T07 | T23 | 通过 | 2026-11-07，`tests/integration/restore.test.ts`、`tests/integration/acceptance-regressions.test.ts`，损坏包、版本、哈希篡改和遗漏清单拒绝 |
+| ERR-01 | T04、T07、T14、T16 | T23 | 通过 | 2026-11-07，`tests/integration/acceptance-regressions.test.ts`、`tests/e2e/studio-drafts.spec.ts`、`tests/integration/drafts.test.ts`、`tests/integration/restore.test.ts`，磁盘写满、流中断、保存重试、修订冲突、删除回滚和恢复初始化失败回滚 |
+| EMPTY-01 | T08、T21 | T23 | 通过 | 2026-11-07，`tests/e2e/data-settings.spec.ts`、`tests/e2e/discovery.spec.ts`、`tests/e2e/assets.spec.ts`，空数据集、无结果、清除筛选和示例补充 |
 
 ## 任务执行记录
 
@@ -60,9 +60,10 @@
 | T17 | 已完成 | 本次 T17 提交 | npm run check、studio-production/studio-drafts e2e | 134 项服务端、21 项界面、7 项相关 e2e 通过 |
 | T18 | 已完成 | 本次 T18 提交 | npm run check、design-deliveries/studio-production/studio-drafts e2e | 140 项服务端、21 项界面、9 项相关 e2e 通过 |
 | T19 | 已完成 | 本次 T19 提交 | npm run check、全部 e2e、Python unittest | 147 项服务端、21 项界面、36 项 e2e、10 项 Python 测试通过 |
-| T20 | 已完成 | 本次 T20 提交 | npm run check、results/studio-production/design-deliveries e2e | 156 项服务端、21 项界面、5 项相关 e2e 通过 |
-| T21 | 已完成 | 本次 T21 提交 | npm run check、discovery/navigation e2e | 159 项服务端、21 项界面、5 项相关 e2e 通过 |
-| T22 | 已完成 | 本次 T22 提交 | npm run check、data-settings/collections-nas/discovery e2e | 163 项服务端、21 项界面、7 项相关 e2e 通过 |
+| T20 | 已完成 | 2e03719 | npm run check、results/studio-production/design-deliveries e2e | 156 项服务端、21 项界面、5 项相关 e2e 通过 |
+| T21 | 已完成 | b1c776d | npm run check、discovery/navigation e2e | 159 项服务端、21 项界面、5 项相关 e2e 通过 |
+| T22 | 已完成 | fc521e2 | npm run check、data-settings/collections-nas/discovery e2e | 163 项服务端、21 项界面、7 项相关 e2e 通过 |
+| T23 | 验证中 | 本次 T23 自动化提交 | npm run check、全部 Playwright、Python unittest、重启校验 prepare | 168 项服务端、24 项界面、45 项 e2e、10 项 Python 测试通过。尚待电脑重启与真实 NAS 人工证据 |
 
 ### T11 验证记录
 
@@ -144,3 +145,28 @@ SK-01 的智能体详情选择与完整关联联调按计划在 T12 完成，PRD
 2026-11-07 完成数据目录、计数、磁盘与最近备份展示，完整包下载、上传校验、恢复预览、取消、确认、失败及成功刷新。恢复可先备份当前数据，共用 NAS、LibTV、剪映与显示偏好已接通。清空使用精确文字二次确认并原子启用空数据集，旧完整数据集保留。补充示例保留用户编辑和已改关联。
 
 `tests/integration/data-settings.test.ts` 的 4 项测试覆盖确认与陈旧数据集、重启空集、幂等补充、指针故障回滚和偏好持久化。2 项浏览器测试完成真实备份下载、取消、坏包、恢复替换及缓存刷新、偏好在资产目录生效、清空取消与确认和示例补充。写屏障跟踪已接受请求，备份、恢复及清空等待其完成。发现并修复旧响应缺少显示偏好时资产页报错，所有回归断言继续通过。
+
+### T23 自动化验证记录
+
+2026-11-07 完成全部现有自动化测试，合计 247 项，零跳过。类型检查、生产构建及 Git 差异检查通过。39 项矩阵逐项关联有效测试，37 项通过，2 项保留人工验收状态。
+
+最后一轮完整运行输出保存在 `.tmp/t23-tests.log`、`.tmp/t23-browser-tests.log` 和 `.tmp/t23-document-tests.log`。
+
+- `tests/integration/acceptance-regressions.test.ts` 的 5 项验证恢复初始化失败后的原连接与指针回滚、共享原文件保留、删除失败事务回滚、磁盘写满反馈与重试、流中断清理、遗漏备份清单拒绝及流式导入期间切换等待。
+- `tests/ui/acceptance.test.tsx` 的 3 项验证弹窗连续输入焦点、真实文本读取与空文件、读取失败和损坏媒体的反馈及下载。
+- `tests/e2e/restart-acceptance.spec.ts` 实际启动独立服务和浏览器，退出浏览器、终止服务进程后重新启动，核对草稿要求、C/A 九秒顺序、制作历史、来源及原文件字节，再执行隔离恢复。
+- `tests/e2e/collections-nas.spec.ts` 实际打开可访问的测试网页新标签，并从系统剪贴板读回完整 Windows 路径。真实 NAS 可达性仍需用户实际网络环境证据。
+- 全量回归发现工作流上传附件引发后台刷新、覆盖未保存输入的问题，已修复并增加上传后原参数、步骤和输入说明保持不变的断言。恢复初始化故障测试先复现原连接关闭及新连接泄漏，再完成回滚与关闭修复。完整套件重跑全部通过。
+- `tests/test_fixtures.py` 将初始化阶段“全部待验收”检查升级为交付阶段的台账检查，继续严格验证 39 个唯一编号、状态、日期、真实证据文件和待验收剩余操作。
+
+### 真实电脑重启验收接续
+
+用户已选择自动化验收后重启。准备脚本在 `.tmp/reboot-acceptance/` 保存独立数据库、视频原文件、完整包与 `evidence.json`。该目录保留于 Playwright 清理目录之外。日常 `data/` 与本次重启校验资料独立。
+
+保存其他工作并实际重启 Windows 后，在项目根目录执行以下命令。
+
+```powershell
+node scripts/reboot-acceptance.mjs verify
+```
+
+脚本先核对 Windows 实际启动时间已经变化，再核对同一数据集、完整草稿、C/A 顺序、九秒时长、历史、来源快照和输入及成果原文件 SHA。全部通过后更新 `.tmp/reboot-acceptance/evidence.json` 的状态与重启后时间。未经历实际电脑重启时校验命令返回失败。完成这项与真实 NAS 可达性证据后关闭 T23，按顺序继续 T24 的 Windows 启停交付和最终全量验证。
