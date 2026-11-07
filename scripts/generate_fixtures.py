@@ -1,104 +1,42 @@
 """Generate deterministic demo fixtures used by tests and the seeded demo data.
 
-The media files are real, decodable files. Video duration, pixel size and the
-H.264 sample payload are written by hand so no external tool (ffmpeg) is
-required to prepare the repository on a clean Windows machine.
+The media files are real, decodable files. Video regeneration uses FFmpeg
+from FFMPEG_EXE or PATH. The generated files are committed so ordinary app
+startup and tests use the prepared media directly.
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
+import os
+import shutil
 import struct
+import subprocess
+import tempfile
 import zlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "fixtures" / "demo"
 
-TIMESCALE = 1000
-
-
-def box(kind: bytes, payload: bytes) -> bytes:
-    return struct.pack(">I", 8 + len(payload)) + kind + payload
-
-
-def full_box(kind: bytes, version: int, flags: int, payload: bytes) -> bytes:
-    return box(kind, struct.pack(">B3s", version, flags.to_bytes(3, "big")) + payload)
-
-
-def mvhd(duration_ms: int) -> bytes:
-    payload = struct.pack(">IIII", 0, 0, TIMESCALE, duration_ms)
-    payload += struct.pack(">IH", 0x00010000, 0x0100) + b"\x00" * 10
-    payload += struct.pack(">9I", *([0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000]))
-    payload += b"\x00" * 24
-    payload += struct.pack(">I", 2)
-    return full_box(b"mvhd", 0, 0, payload)
-
-
-def tkhd(track_id: int, duration_ms: int, width: int, height: int) -> bytes:
-    payload = struct.pack(">IIII", 0, 0, track_id, 0)
-    payload += struct.pack(">I", duration_ms)
-    payload += b"\x00" * 8
-    payload += struct.pack(">hhhh", 0, 0, 0, 0)
-    payload += struct.pack(">9I", *([0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000]))
-    payload += struct.pack(">II", width << 16, height << 16)
-    return full_box(b"tkhd", 0, 3, payload)
-
-
-def mdhd(duration_ms: int) -> bytes:
-    payload = struct.pack(">IIIIHH", 0, 0, TIMESCALE, duration_ms, 0x55C4, 0)
-    return full_box(b"mdhd", 0, 0, payload)
-
-
-def hdlr(kind: bytes, name: bytes) -> bytes:
-    return full_box(b"hdlr", 0, 0, b"\x00" * 4 + kind + b"\x00" * 12 + name + b"\x00")
-
-
-def video_sample_entry(width: int, height: int) -> bytes:
-    payload = b"\x00" * 6 + struct.pack(">H", 1)
-    payload += b"\x00" * 16
-    payload += struct.pack(">HH", width, height)
-    payload += struct.pack(">II", 0x00480000, 0x00480000)
-    payload += b"\x00" * 4
-    payload += struct.pack(">H", 1)
-    payload += b"\x00" * 32
-    payload += struct.pack(">Hh", 0x0018, -1)
-    return box(b"avc1", payload)
-
-
-def avc1_config() -> bytes:
-    # Minimal but well-formed avcC record; decoders treat the payload as a
-    # single sample, which is enough for metadata and Range tests.
-    payload = bytes([1, 0x42, 0x00, 0x1E, 0xFF, 0xE1, 0x00, 0x08])
-    payload += bytes([0x67, 0x42, 0x00, 0x1E, 0x95, 0xA8, 0x28, 0x0F])
-    payload += bytes([1, 0x00, 0x04, 0x68, 0xCE, 0x3C, 0x80])
-    return box(b"avcC", payload)
-
-
-def stbl(duration_ms: int, width: int, height: int) -> bytes:
-    sample = video_sample_entry(width, height) + avc1_config()
-    stsd = full_box(b"stsd", 0, 0, struct.pack(">I", 1) + sample)
-    stts = full_box(b"stts", 0, 0, struct.pack(">IIII", 1, 1, 1, duration_ms))
-    stsc = full_box(b"stsc", 0, 0, struct.pack(">IIII", 1, 1, 1, 1))
-    stsz = full_box(b"stsz", 0, 0, struct.pack(">III", 0, 1, 128))
-    stco = full_box(b"stco", 0, 0, struct.pack(">II", 1, 0))
-    return box(b"stbl", stsd + stts + stsc + stsz + stco)
-
-
 def make_mp4(duration_ms: int, width: int, height: int, color: bytes) -> bytes:
-    stbl_box = stbl(duration_ms, width, height)
-    vmhd = full_box(b"vmhd", 0, 1, b"\x00" * 8)
-    dinf = box(b"dinf", full_box(b"dref", 0, 0, struct.pack(">I", 0)))
-    minf = box(b"minf", vmhd + dinf + stbl_box)
-    mdia = box(b"mdia", mdhd(duration_ms) + hdlr(b"vide", b"VideoHandler") + minf)
-    trak = box(b"trak", tkhd(1, duration_ms, width, height) + mdia)
-    moov = box(b"moov", mvhd(duration_ms) + trak)
-
-    sample = (color * (128 // len(color) + 1))[:128]
-    mdat = box(b"mdat", sample)
-    ftyp = box(b"ftyp", b"isom" + struct.pack(">I", 0x200) + b"isomiso2avc1mp41")
-    return ftyp + moov + mdat
+    encoder = os.environ.get("FFMPEG_EXE") or shutil.which("ffmpeg")
+    if not encoder:
+        raise RuntimeError("Regenerating video fixtures requires FFmpeg. Set FFMPEG_EXE to its executable path.")
+    with tempfile.TemporaryDirectory(prefix="aiw-video-fixture-") as directory:
+        target = Path(directory) / "fixture.mp4"
+        subprocess.run(
+            [encoder, "-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i",
+             f"color=c=0x{color.hex()}:s={width}x{height}:r=12:d={duration_ms / 1000}",
+             "-an", "-c:v", "libvpx-vp9", "-pix_fmt", "yuv420p", "-b:v", "0",
+             "-crf", "38", "-deadline", "realtime", "-cpu-used", "6", "-threads", "1", "-g", "12",
+             "-flags:v", "+bitexact", "-fflags", "+bitexact", "-map_metadata", "-1",
+             "-movflags", "+faststart", "-y", str(target)],
+            check=True,
+            capture_output=True,
+        )
+        return target.read_bytes()
 
 
 def make_png(width: int, height: int, color: tuple[int, int, int]) -> bytes:

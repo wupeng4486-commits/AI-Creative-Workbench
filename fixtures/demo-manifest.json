@@ -7,18 +7,18 @@
     },
     {
       "name": "测试视频A-4秒.mp4",
-      "bytes": 762,
-      "sha256": "2b3fcbabb0310acdef35c789d89d0e553dd9c3345d06aade786e2b5a5fb70e95"
+      "bytes": 3086,
+      "sha256": "9898385bc5aaaebbcebfcb0948fba45e157e6565bdba39539a52c34b4a8e6834"
     },
     {
       "name": "测试视频B-6秒.mp4",
-      "bytes": 762,
-      "sha256": "5428f54d0dab744b84d842c9a8ae9a50d3e956c764fe7921202dfc02cf76de51"
+      "bytes": 4180,
+      "sha256": "2d0bc34f02e618baa9461c728bd089c08c5a15ead71d23e038a8f6c90f80b4ab"
     },
     {
       "name": "测试视频C-5秒.mp4",
-      "bytes": 762,
-      "sha256": "1d5817f19a3018075151f5b230afbc6d087319bf3c56db88537f43aed823c237"
+      "bytes": 3625,
+      "sha256": "bb1a9fccee98fda20b8ef78c451c62fd65fab1d432db617f6cdf4fce1b4b0fb6"
     },
     {
       "name": "测试说明文档.pdf",

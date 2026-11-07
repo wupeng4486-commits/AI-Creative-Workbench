@@ -11,7 +11,7 @@
 | Python（文档与 fixture 脚本） | 3.12.14 | 使用本机内置 UTF-8 模式 |
 | SQLite（Python 自带，参考） | 3.53.1 | 服务端使用 better-sqlite3 自带 SQLite |
 | 磁盘与写入 | 工作区可写（fixture 生成成功） | 数据目录默认 `data\`，可用 `APP_DATA_DIR` 覆盖 |
-| ffmpeg / ffprobe | 未安装 | 视频元数据由 `scripts/generate_fixtures.py` 直接写入，不依赖外部工具 |
+| FFmpeg | 7.1 | T19 使用 imageio-ffmpeg 0.6.0 的临时编码工具重新生成真实 H.264 视频；通过 FFMPEG_EXE 指定路径 |
 
 ## 依赖兼容性
 
@@ -31,3 +31,9 @@ fixture 清单见 `fixtures/demo-manifest.json`，由 `scripts/generate_fixtures
   时长分别为 4、6、5 秒，640×360，标注为测试素材。
 
 真实业务真人素材在本机使用时由用户自行导入，不入库。
+
+## T19 媒体复查
+
+原视频样例只包含容器和时长元数据，真实浏览器解码测试检出无法播放。现使用 FFmpeg 7.1 编码为 VP9/MP4、yuv420p、12 fps，尺寸与 4、6、5 秒时长符合验收要求。当前 Playwright Chromium 的媒体能力检查确认支持 VP9/MP4，H.264 返回不支持。仓库保存编码后的成品文件及更新后的 SHA-256 清单。普通启动直接读取这些成品文件，重新生成素材时需设置 `FFMPEG_EXE`。
+
+`tests/e2e/media-decode.spec.ts` 验证三个视频能够读取画面、得到正确尺寸和时长、开始播放并推进播放时间。T19 按该验证结果重新执行媒体相关回归。
