@@ -9,7 +9,10 @@ export interface Migration {
   file: string;
 }
 
-export const MIGRATIONS: Migration[] = [{ id: "001-initial", file: "001-initial.sql" }];
+export const MIGRATIONS: Migration[] = [
+  { id: "001-initial", file: "001-initial.sql" },
+  { id: "002-idempotency", file: "002-idempotency.sql" },
+];
 
 export function migrationsDir(): string {
   return path.join(import.meta.dirname, "migrations");
