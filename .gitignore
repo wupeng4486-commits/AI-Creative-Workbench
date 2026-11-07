@@ -1,20 +1,11 @@
-# OS / Explorer junk
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-$RECYCLE.BIN/
+node_modules/
+dist/
+data/
+test-results/
+playwright-report/
+*.log
 .DS_Store
-
-# Editors
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# Temp / export artifacts
-*.tmp
-*.bak
-~$*
-output/
-exports/
+Thumbs.db
+__pycache__/
+*.pyc
+.tmp/
