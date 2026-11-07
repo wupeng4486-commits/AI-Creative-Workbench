@@ -2,8 +2,11 @@ import { defineConfig, devices } from "@playwright/test";
 import path from "node:path";
 import os from "node:os";
 
-const port = 4399;
-const dataDir = path.join(os.tmpdir(), "ai-workbench-e2e");
+const port = 4401;
+const dataDir = path.join(
+  os.tmpdir(),
+  `ai-workbench-e2e-${Date.now().toString(36)}`,
+);
 
 export default defineConfig({
   testDir: "tests/e2e",

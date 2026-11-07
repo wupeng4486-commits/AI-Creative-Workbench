@@ -126,6 +126,10 @@ export function commitStagedFile(
   sha256: string,
 ): ImportedFile {
   const id = newId();
+  // Browsers occasionally send a generic type; the extension is more reliable.
+  if (!mimeType || mimeType === "application/octet-stream") {
+    mimeType = guessMimeType(originalName);
+  }
   const ext = safeExtension(originalName);
   const relativePath = path.join(id, `original${ext}`);
   const target = absoluteFilePath(datasetDir, relativePath);
